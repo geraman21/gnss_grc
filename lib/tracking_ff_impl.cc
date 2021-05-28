@@ -7,13 +7,12 @@
 
 #include <gnuradio/io_signature.h>
 #include "tracking_ff_impl.h"
+#include <algorithm> // std::transform
 
 namespace gr {
   namespace gnss {
 
-    #pragma message("set the following appropriately and remove this warning")
     using input_type = float;
-    #pragma message("set the following appropriately and remove this warning")
     using output_type = float;
     tracking_ff::sptr
     tracking_ff::make()
@@ -47,7 +46,8 @@ namespace gr {
       const input_type *in = reinterpret_cast<const input_type*>(input_items[0]);
       output_type *out = reinterpret_cast<output_type*>(output_items[0]);
 
-      #pragma message("Implement the signal processing in your block and remove this warning")
+      std::transform(in, in + noutput_items, out, out, [](input_type x, input_type y) {return x * 2;});
+
       // Do <+signal processing+>
 
       // Tell runtime system how many output items we produced.
