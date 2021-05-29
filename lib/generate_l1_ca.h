@@ -3,7 +3,7 @@
 
 #include <vector>
 
-std::vector<int> generateCA(int prn, int chip_shift);
+std::vector<int> generateCa(int prn, int chip_shift = 0);
 
 
 #endif

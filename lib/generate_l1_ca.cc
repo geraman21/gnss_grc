@@ -38,7 +38,7 @@ std::vector<int> generateCa( int prn, int chip_shift)
     // A simple error check
     if ((prn_idx < 0) || (prn_idx > 51))
         {
-            return;
+            return dest;
         }
 
     // Generate G1 & G2 Register
@@ -71,11 +71,11 @@ std::vector<int> generateCa( int prn, int chip_shift)
             aux = G1[(lcv + chip_shift) % code_length] xor G2[delay];
             if (aux == true)
                 {
-                    dest[lcv] = 1;
+                    dest.at(lcv) = 1;
                 }
             else
                 {
-                    dest[lcv] = -1;
+                    dest.at(lcv) = -1;
                 }
             delay++;
             delay %= code_length;
