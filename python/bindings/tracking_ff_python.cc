@@ -33,7 +33,7 @@ void bind_tracking_ff(py::module& m)
     using tracking_ff    = gr::gnss::tracking_ff;
 
 
-    py::class_<tracking_ff, gr::sync_block, gr::block, gr::basic_block,
+    py::class_<tracking_ff,
         std::shared_ptr<tracking_ff>>(m, "tracking_ff", D(tracking_ff))
 
         .def(py::init(&tracking_ff::make),

@@ -31,7 +31,7 @@ namespace gr {
       float oldCarrError = 0.0;
       float sampleFreq = 38.192e6;
       float dllCorrelatorSpacing = 0.5;
-      float I_P = 0;
+      float output = 0;
       int codeLength = 1023;
       std::vector<float> buffer;
       float remCarrPhase = 0;

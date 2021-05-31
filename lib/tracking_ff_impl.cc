@@ -12,7 +12,7 @@
 #include "helper-functions.h"
 #define _USE_MATH_DEFINES
 #include <cmath>
-#include <numeric> // std::accumulate
+#include <iostream>
 
 
 namespace gr {
@@ -103,43 +103,42 @@ namespace gr {
           remCodePhase = copysign(1.0, remCodePhase) * codePhaseStep;
         } else remCodePhase = 0;
 
-        std::vector<float> trgiArg = linspace(0, blksize * codePhaseStep, blksize);
-        std::transform(trgiArg.begin(), trgiArg.end(), trgiArg.begin(), [this] (float x) { return (carrFreq * M_PI * 2 * x + remCarrPhase); });
+        // std::vector<float> trgiArg = linspace(0, blksize / sampleFreq, blksize);
+        // std::transform(trgiArg.begin(), trgiArg.end(), trgiArg.begin(), [this] (float x) { return (carrFreq * M_PI * 2 * x + remCarrPhase); });
 
-        // Update remCarrPhase
-        remCarrPhase = fmod(trgiArg.back(), 2 * M_PI);
 
-        std::vector<float> qBaseBandSignal (trgiArg.size());
-        std::vector<float> iBaseBandSignal (trgiArg.size());
 
-        std::transform(trgiArg.begin(), trgiArg.end(), buffer.begin(), qBaseBandSignal.begin(), [this] (float x, float y) { return cos(x) * y; });
-        std::transform(trgiArg.begin(), trgiArg.end(), buffer.begin(), iBaseBandSignal.begin(), [this] (float x, float y) { return sin(x) * y; });
+        // std::vector<float> qBaseBandSignal (blksize);
+        // std::vector<float> iBaseBandSignal (blksize);
 
-        std::vector<float> corrVector(blksize);
+        // std::transform(trgiArg.begin(), trgiArg.end(), buffer.begin(), qBaseBandSignal.begin(), [] (float x, float y) { return cos(x) * y; });
+        // std::transform(trgiArg.begin(), trgiArg.end(), buffer.begin(), iBaseBandSignal.begin(), [] (float x, float y) { return sin(x) * y; });
 
         // declare variables for correlation results for early late and prompt codes with the signal (I_P is defined in the class)
-        float I_E, Q_E, Q_P, I_L, Q_L;
+        float I_E {0}, Q_E {0}, Q_P {0}, I_P {0}, I_L {0}, Q_L {0};
 
         // do element wise multiplication and save SUM in the above variables
 
-        std::transform(earlyCode.begin(), earlyCode.end(), qBaseBandSignal.begin(), corrVector.begin(), std::multiplies<float>());
-        Q_E = std::accumulate(corrVector.begin(), corrVector.end(), 0.0);
+        for(int i = 0; i< blksize; i++) {
+            float trigArg = (carrFreq * 2 * M_PI * (i / sampleFreq)) + remCarrPhase;
+            
+            // Update remCarrPhase
+            if(i == blksize -1) remCarrPhase = remainderf(trigArg, 2 * M_PI);
+            
+            float qSignal = cos(trigArg) * buffer.at(i);
+            float iSignal = sin(trigArg) * buffer.at(i);
 
-        std::transform(earlyCode.begin(), earlyCode.end(), iBaseBandSignal.begin(), corrVector.begin(), std::multiplies<float>());
-        I_E = std::accumulate(corrVector.begin(), corrVector.end(), 0.0);
+            Q_E += earlyCode.at(i) * qSignal;
+            I_E += earlyCode.at(i) * iSignal;
+            Q_P += promptCode.at(i) * qSignal;
+            I_P += promptCode.at(i) * iSignal;
+            Q_L += lateCode.at(i) * qSignal;
+            I_L += lateCode.at(i) * iSignal;
+        }
 
-        std::transform(promptCode.begin(), promptCode.end(), qBaseBandSignal.begin(), corrVector.begin(), std::multiplies<float>());
-        Q_P = std::accumulate(corrVector.begin(), corrVector.end(), 0.0);
+        // Update output value to I_P
 
-        std::transform(promptCode.begin(), promptCode.end(), iBaseBandSignal.begin(), corrVector.begin(), std::multiplies<float>());
-        I_P = std::accumulate(corrVector.begin(), corrVector.end(), 0.0);
-
-        std::transform(lateCode.begin(), lateCode.end(), qBaseBandSignal.begin(), corrVector.begin(), std::multiplies<float>());
-        Q_L = std::accumulate(corrVector.begin(), corrVector.end(), 0.0);
-
-        std::transform(lateCode.begin(), lateCode.end(), iBaseBandSignal.begin(), corrVector.begin(), std::multiplies<float>());
-        I_L = std::accumulate(corrVector.begin(), corrVector.end(), 0.0);
-
+        output = 0;   
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
@@ -169,8 +168,11 @@ namespace gr {
         buffer.erase(buffer.begin(), buffer.begin() + blksize);
       }
 
-      std::transform(out, out + noutput_items, out, [this](input_type x) {return I_P;});
-      
+      // std::transform(out, out + noutput_items, out, [this](input_type x) {return output;});
+
+      for(int i = 0; i< noutput_items; i++) {
+        out[i] = output;
+      }
       // Tell runtime system how many output items we produced.
       return noutput_items;
     }
