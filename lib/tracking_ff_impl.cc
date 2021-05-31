@@ -137,8 +137,9 @@ namespace gr {
         }
 
         // Update output value to I_P
+        
 
-        output = 0;   
+        output = I_P;   
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
