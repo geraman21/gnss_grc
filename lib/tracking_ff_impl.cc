@@ -66,18 +66,9 @@ namespace gr {
       const input_type *in = reinterpret_cast<const input_type*>(input_items[0]);
       output_type *out = reinterpret_cast<output_type*>(output_items[0]);
 
-      // Add incoming data into the buffer to work on later
-      // buffer.insert(buffer.end(), in, in + noutput_items);
-      // std::cout<<"Size of in: "<<sizeof(input_items[0])/sizeof(in[0])<<std::endl;
-      // std::cout<<"nuoutput_items: "<<noutput_items<<std::endl;
-      // std::cout<<"Buffer Size: "<<buffer.size()<<std::endl;
-
       // Align the phase of the signal
       if (codePhase > 0) {
-        // buffer.erase(buffer.begin(), buffer.begin() + codePhase);
         codePhase -= noutput_items;
-        std::cout<<codePhase<<std::endl;
-        std::cout<<noutput_items<<std::endl;
       }
 
       // Declare Early Late and Prompt code variables and their starting points
@@ -87,10 +78,8 @@ namespace gr {
       float tEndPrompt = blksize*codePhaseStep+remCodePhase;
 
       for(int i = 0; i < noutput_items; i++) {
-        if ( codePhase < 0 && i == (noutput_items + codePhase + 1)) {
-          std::cout<<I_P<<std::endl;
-          codePhase = 0;}
-          
+        if ( codePhase < 0 && i == (noutput_items + codePhase + 1)) codePhase = 0;
+
         if (codePhase == 0)    { 
           // Generate Early CA Code.
           float earlyCode = caCode.at( std::ceil( tStartEarly + codePhaseStep * iterator ) );
