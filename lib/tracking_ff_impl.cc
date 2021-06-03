@@ -79,47 +79,40 @@ namespace gr {
 
       if (buffer.size() >= blksize) {
 
-        // Generate Early CA Code.
-        float tStartEarly = remCodePhase - earlyLateSpc;
-        float tEndEarly = blksize*codePhaseStep+remCodePhase - earlyLateSpc;
-        std::vector<float> earlyCode = linspace(tStartEarly, tEndEarly, blksize);
-        std::for_each(earlyCode.begin(), earlyCode.end(), [this] (float x) {return caCode.at( std::ceil(x));});
-
-        // Generate Late CA Code.
-        float tStartLate = remCodePhase - earlyLateSpc;
-        float tEndLate = blksize*codePhaseStep+remCodePhase + earlyLateSpc;
-        std::vector<float> lateCode = linspace(tStartLate, tEndLate, blksize);
-        std::for_each(lateCode.begin(), lateCode.end(), [this] (float x) {return caCode.at( std::ceil(x));});
-
-        // Generate Late CA Code.
-        float tStartPrompt = remCodePhase - earlyLateSpc;
-        float tEndPrompt = blksize*codePhaseStep+remCodePhase;
-        std::vector<float> promptCode = linspace(tStartPrompt, tEndPrompt, blksize);
-        std::for_each(promptCode.begin(), promptCode.end(), [this] (float x) {return caCode.at( std::ceil(x));});
-
-        // Figure out remaining code phase (uses tcode from Prompt CA Code generation):
-        remCodePhase = linspace(tStartPrompt, tEndPrompt, blksize).back() + codePhaseStep - 1023;
-        if(std::abs(remCodePhase) > codePhaseStep) {
-          remCodePhase = copysign(1.0, remCodePhase) * codePhaseStep;
-        } else remCodePhase = 0;
-
-        // std::vector<float> trgiArg = linspace(0, blksize / sampleFreq, blksize);
-        // std::transform(trgiArg.begin(), trgiArg.end(), trgiArg.begin(), [this] (float x) { return (carrFreq * M_PI * 2 * x + remCarrPhase); });
-
-
-
-        // std::vector<float> qBaseBandSignal (blksize);
-        // std::vector<float> iBaseBandSignal (blksize);
-
-        // std::transform(trgiArg.begin(), trgiArg.end(), buffer.begin(), qBaseBandSignal.begin(), [] (float x, float y) { return cos(x) * y; });
-        // std::transform(trgiArg.begin(), trgiArg.end(), buffer.begin(), iBaseBandSignal.begin(), [] (float x, float y) { return sin(x) * y; });
-
         // declare variables for correlation results for early late and prompt codes with the signal (I_P is defined in the class)
         float I_E {0}, Q_E {0}, Q_P {0}, I_P {0}, I_L {0}, Q_L {0};
 
         // do element wise multiplication and save SUM in the above variables
 
+        float tStartEarly = remCodePhase - earlyLateSpc;
+        float tEndEarly = blksize*codePhaseStep+remCodePhase - earlyLateSpc;
+        float earlyCode {0};
+
+        float tStartLate = remCodePhase + earlyLateSpc;
+        float tEndLate = blksize*codePhaseStep+remCodePhase + earlyLateSpc;
+        float lateCode {0};
+
+        float tStartPrompt = remCodePhase;
+        float tEndPrompt = blksize*codePhaseStep+remCodePhase;
+        float promptCode {0};
+
+        float codeStep = tEndPrompt / tStartPrompt;
+
         for(int i = 0; i< blksize; i++) {
+
+            // Generate Early CA Code.
+            earlyCode = caCode.at( std::ceil( tStartEarly + codeStep * i ) );
+            
+            // Generate Late CA Code.
+            lateCode = caCode.at( std::ceil( tStartLate + codeStep * i ) );
+
+            // Generate Prompt CA Code.
+            promptCode = caCode.at( std::ceil( tStartPrompt + codeStep * i ) );
+
+
+
+            // Figure out remaining code phase (uses tcode from Prompt CA Code generation):
+
             float trigArg = (carrFreq * 2 * M_PI * (i / sampleFreq)) + remCarrPhase;
             
             // Update remCarrPhase
@@ -128,18 +121,30 @@ namespace gr {
             float qSignal = cos(trigArg) * buffer.at(i);
             float iSignal = sin(trigArg) * buffer.at(i);
 
-            Q_E += earlyCode.at(i) * qSignal;
-            I_E += earlyCode.at(i) * iSignal;
-            Q_P += promptCode.at(i) * qSignal;
-            I_P += promptCode.at(i) * iSignal;
-            Q_L += lateCode.at(i) * qSignal;
-            I_L += lateCode.at(i) * iSignal;
+            if ( output == 0 &&( i == 0 || i == std::abs(blksize / 2) || i == blksize -1 ) ) {
+              std::cout<<"Early code: "<<earlyCode<<std::endl;
+              std::cout<<"Late code: "<<lateCode<<std::endl;
+              std::cout<<"Prompt code: "<<promptCode<<std::endl;
+              std::cout<<"iSignal: "<<iSignal<<std::endl;
+            }
+
+            Q_E += earlyCode * qSignal;
+            I_E += earlyCode * iSignal;
+            Q_P += promptCode * qSignal;
+            I_P += promptCode * iSignal;
+            Q_L += lateCode * qSignal;
+            I_L += lateCode * iSignal;
         }
 
-        // Update output value to I_P
         
+        remCodePhase = tEndPrompt - codeStep + codePhaseStep - 1023;
+        if(std::abs(remCodePhase) > codePhaseStep) {
+          remCodePhase = copysign(1.0, remCodePhase) * codePhaseStep;
+        } else remCodePhase = 0;
+            
 
-        output = I_P;   
+        // Update output value to I_P
+        output += 1;   
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
@@ -168,8 +173,6 @@ namespace gr {
         codeFreq = chippingRate - codeNco;
         buffer.erase(buffer.begin(), buffer.begin() + blksize);
       }
-
-      // std::transform(out, out + noutput_items, out, [this](input_type x) {return output;});
 
       for(int i = 0; i< noutput_items; i++) {
         out[i] = output;
