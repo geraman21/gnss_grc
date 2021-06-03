@@ -21,6 +21,9 @@ namespace gr {
     {
      private:
       // Nothing to declare in this block.
+      float I_E {0}, Q_E {0}, Q_P {0}, I_P {0}, I_L {0}, Q_L {0};
+      int iterator = 0;
+      int blksize = 38192;
       int codePhase;
       float carrFreq;
       float carrFreqBasis;
@@ -30,6 +33,7 @@ namespace gr {
       float oldCarrNco = 0.0;
       float oldCarrError = 0.0;
       float sampleFreq = 38.192e6;
+      float codePhaseStep = 0;
       float dllCorrelatorSpacing = 0.5;
       float output = 0;
       int codeLength = 1023;
