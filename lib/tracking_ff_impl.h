@@ -8,68 +8,65 @@
 #ifndef INCLUDED_GNSS_TRACKING_FF_IMPL_H
 #define INCLUDED_GNSS_TRACKING_FF_IMPL_H
 
+#include "channel.h"
+#include "generate_l1_ca.h"
+#include "helper-functions.h"
 #include <gnss/tracking_ff.h>
 #include <vector>
-#include "channel.h"
-#include "helper-functions.h"
-#include "generate_l1_ca.h"
 
 namespace gr {
-  namespace gnss {
+namespace gnss {
 
-    class tracking_ff_impl : public tracking_ff
-    {
-     private:
-      // Nothing to declare in this block.
-      float I_E {0}, Q_E {0}, Q_P {0}, I_P {0}, I_L {0}, Q_L {0};
-      int iterator = 0;
-      int blksize = 38192;
-      int codePhase;
-      float carrFreq;
-      float carrFreqBasis;
-      Channel *channel {nullptr};
-      std::vector<int> caCode;
-      float codeFreq = 1.023e6;
-      float oldCarrNco = 0.0;
-      float oldCarrError = 0.0;
-      float sampleFreq = 38.192e6;
-      float codePhaseStep = 0;
-      float dllCorrelatorSpacing = 0.5;
-      float output = 0;
-      int codeLength = 1023;
-      std::vector<float> buffer;
-      float remCarrPhase = 0;
-      float remCodePhase = 0;
-      float PDI = 0.001;
-      float oldCodeNco = 0;
-      float oldCodeError = 0;
-      float earlyLateSpc = 0.5;
-      float chippingRate = 1.023e6;
-      short pllNoiseBandwidth = 25;
-      short dllNoiseBandwidth = 2;
-      float pllDampingRatio = 0.7;
-      float dllDampingRatio = 0.7;
-      float loopGainCarr = 0.25;
-      float loopGainCode = 1;
+class tracking_ff_impl : public tracking_ff
+{
+private:
+    // Nothing to declare in this block.
+    float I_E{ 0 }, Q_E{ 0 }, Q_P{ 0 }, I_P{ 0 }, I_L{ 0 }, Q_L{ 0 };
+    int iterator = 0;
+    int blksize = 38192;
+    int codePhase;
+    float carrFreq;
+    float carrFreqBasis;
+    Channel* channel{ nullptr };
+    std::vector<int> caCode;
+    float codeFreq = 1.023e6;
+    float oldCarrNco = 0.0;
+    float oldCarrError = 0.0;
+    float sampleFreq = 38.192e6;
+    float codePhaseStep = 0;
+    float dllCorrelatorSpacing = 0.5;
+    float output = 0;
+    int codeLength = 1023;
+    std::vector<float> buffer;
+    float remCarrPhase = 0;
+    float remCodePhase = 0;
+    float PDI = 0.001;
+    float oldCodeNco = 0;
+    float oldCodeError = 0;
+    float earlyLateSpc = 0.5;
+    float chippingRate = 1.023e6;
+    short pllNoiseBandwidth = 25;
+    short dllNoiseBandwidth = 2;
+    float pllDampingRatio = 0.7;
+    float dllDampingRatio = 0.7;
+    float loopGainCarr = 0.25;
+    float loopGainCode = 1;
 
-      float tau1carr, tau2carr;
-      float tau1code, tau2code;
-      
+    float tau1carr, tau2carr;
+    float tau1code, tau2code;
 
-     public:
-      tracking_ff_impl();
-      ~tracking_ff_impl();
 
-      // Where all the action really happens
-      int work(
-              int noutput_items,
-              gr_vector_const_void_star &input_items,
-              gr_vector_void_star &output_items
-      );
-    };
+public:
+    tracking_ff_impl();
+    ~tracking_ff_impl();
 
-  } // namespace gnss
+    // Where all the action really happens
+    int work(int noutput_items,
+             gr_vector_const_void_star& input_items,
+             gr_vector_void_star& output_items);
+};
+
+} // namespace gnss
 } // namespace gr
 
 #endif /* INCLUDED_GNSS_TRACKING_FF_IMPL_H */
-
