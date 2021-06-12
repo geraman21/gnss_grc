@@ -95,10 +95,11 @@ int tracking_ff_impl::work(int noutput_items,
             float trigArg =
                 (carrFreq * 2 * M_PI * (iterator / sampleFreq)) + remCarrPhase;
 
-            float qSignal = cos(trigArg) * in[i];
-            float iSignal = sin(trigArg) * in[i];
-            // float qSignal = 0.5 * in[i];
-            // float iSignal = 0.55 * in[i];
+            float sin;
+            float cos;
+            sincosf(trigArg, &sin, &cos);
+            float qSignal = in[i] * cos;
+            float iSignal = in[i] * sin;
 
             Q_E += earlyCode * qSignal;
             I_E += earlyCode * iSignal;
@@ -138,10 +139,9 @@ int tracking_ff_impl::work(int noutput_items,
 
                 //  Modify carrier freq based on NCO command
                 carrFreq = carrFreqBasis + carrNco;
-
-                float codeError =
-                    (sqrt(I_E * I_E + Q_E * Q_E) - sqrt(I_L * I_L + Q_L * Q_L)) /
-                    (sqrt(I_E * I_E + Q_E * Q_E) + sqrt(I_L * I_L + Q_L * Q_L));
+                float sqrtEarly = sqrt(I_E * I_E + Q_E * Q_E);
+                float sqrtLate = sqrt(I_L * I_L + Q_L * Q_L);
+                float codeError = (sqrtEarly - sqrtLate) / (sqrtEarly + sqrtLate);
 
                 //  Implement code loop filter and generate NCO command
                 float codeNco = oldCodeNco + tau1code * (codeError - oldCodeError) +
