@@ -8,6 +8,7 @@ This .sh file will be executed upon login.
 
 After the above steps are successfully completed, clone the repository: https://github.com/geraman21/gnss_grc
 anywhere on your pc. Then open terminal in the repository folder an run the following commands to install the custom module in gnu radio:
+
 ```
 mkdir build
 cd build
@@ -16,4 +17,5 @@ make
 sudo make install
 sudo ldconfig
 ```
+
 After this is done click refresh in GRC GUI, and the custom module with all its block should be available via module selection list.
