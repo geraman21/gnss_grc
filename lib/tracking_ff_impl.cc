@@ -115,7 +115,7 @@ int tracking_ff_impl::work(int noutput_items,
                 // Update output value to I_P
                 output = I_P;
 
-                remCarrPhase = remainderf(trigArg, 2 * M_PI);
+                remCarrPhase = fmodf(trigArg, 2 * M_PI);
 
                 // Update remaining Code Phase once per ms
                 remCodePhase = tEndPrompt - 1023;
