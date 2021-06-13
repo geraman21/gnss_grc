@@ -7,5 +7,6 @@
 #
 
 install(FILES
-    gnss_tracking_ff.block.yml DESTINATION share/gnuradio/grc/blocks
+    gnss_tracking_ff.block.yml
+    gnss_decoding_test.block.yml DESTINATION share/gnuradio/grc/blocks
 )

@@ -11,5 +11,6 @@
 ########################################################################
 install(FILES
     api.h
-    tracking_ff.h DESTINATION include/gnss
+    tracking_ff.h
+    decoding_test.h DESTINATION include/gnss
 )

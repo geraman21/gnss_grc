@@ -16,6 +16,7 @@ list(APPEND gnss_sources
     generate_l1_ca.cc
     helper-functions.cc
     channel.cc
+    decoding_test_impl.cc
 )
 
 set(gnss_sources "${gnss_sources}" PARENT_SCOPE)
