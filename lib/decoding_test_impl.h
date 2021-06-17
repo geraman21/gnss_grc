@@ -22,7 +22,7 @@ private:
     int buffer[20000];
     int reversePreamble[160];
     std::vector<int> corrResult;
-    void printMessage(std::string port, std::string msg);
+    void printMessage(std::string msg);
 
 
 public:

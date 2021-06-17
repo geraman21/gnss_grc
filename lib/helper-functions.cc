@@ -48,7 +48,7 @@ std::vector<float> linspace(float start_in, float end_in, int num_in)
 
     return linspaced;
 }
-
+// https://www.allaboutcircuits.com/technical-articles/understanding-correlation/
 // Call with two vectors of data in x and y. Let z point to memory for result.
 // Allocate length_x + length_y-1 locations. lenx and leny are the respective
 // lengths of data.
@@ -63,7 +63,6 @@ void convolve(std::vector<T>* result, T* x, T* y, int lenx, int leny)
     int i, n, n_lo, n_hi;
 
     lenz = lenx + leny - 1;
-
 
     for (i = 0; i < lenz; i++) {
         s = 0.0;
