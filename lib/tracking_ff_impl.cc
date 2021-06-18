@@ -13,6 +13,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <iostream>
+#include <math.h>
 
 
 namespace gr {
@@ -97,7 +98,7 @@ int tracking_ff_impl::work(int noutput_items,
 
             float sin;
             float cos;
-            sincosf(trigArg, &sin, &cos);
+            __sincosf(trigArg, &sin, &cos);
             float qSignal = in[i] * cos;
             float iSignal = in[i] * sin;
 
