@@ -1,4 +1,6 @@
+#include "helper-functions.h"
 #include "vector"
+#include <iostream>
 
 void calcloopCoef(float& coeff1,
                   float& coeff2,
@@ -55,10 +57,10 @@ std::vector<float> linspace(float start_in, float end_in, int num_in)
 // performs straight convolution by Clay S. Turner
 // for correlattion just reverse the order of sequence y;
 
-template <class T>
-void convolve(std::vector<T>* result, T* x, T* y, int lenx, int leny)
+// template <class T>
+void convolve(std::vector<int>* result, int* x, int* y, int lenx, int leny)
 {
-    T s, *xp, *yp;
+    int s, *xp, *yp;
     int lenz;
     int i, n, n_lo, n_hi;
 
@@ -75,6 +77,6 @@ void convolve(std::vector<T>* result, T* x, T* y, int lenx, int leny)
             xp++;
             yp--;
         }
-        (*result).push_back(s);
+        (*result).at(i) = s;
     }
 }

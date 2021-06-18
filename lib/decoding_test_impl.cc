@@ -9,6 +9,7 @@
 #include "helper-functions.h"
 #include <gnuradio/io_signature.h>
 #include <pmt/pmt.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -35,12 +36,15 @@ decoding_test_impl::decoding_test_impl(int prn)
       PRN(prn)
 {
     message_port_register_out(pmt::string_to_symbol("result"));
-    corrResult.reserve(14159);
+    corrResult = std::vector<int>(14159);
     int reversePreambleShort[]{ 1, 1, 0, 1, 0, 0, 0, 1 };
 
     for (int i = 0; i < 8; i++) {
-        for (int n = i * 20; n < i + 20; n++) {
-            reversePreambleShort[i] ? reversePreamble[n] = 1 : reversePreamble[n] = -1;
+        for (int n = i * 20; n < ((i + 1) * 20); n++) {
+            if (reversePreambleShort[i] == 1)
+                reversePreamble[n] = 1;
+            else
+                reversePreamble[n] = -1;
         }
     }
 }
@@ -63,16 +67,42 @@ int decoding_test_impl::work(int noutput_items,
 
     // Do <+signal processing+>
     for (int i = 0; i < noutput_items; i++) {
-        buffer[iterator] = in[i] > 0 ? 1 : -1;
+        // buffer[iterator] = in[i] > 0 ? 1 : -1;
+        if (in[i] > 0)
+            buffer[iterator] = 1;
+        else
+            buffer[iterator] = -1;
 
         out[i] = in[i];
         if (iterator == 13999) {
             convolve(&corrResult, buffer, reversePreamble, 14000, 160);
-            std::vector<int>::iterator it = std::find_if(
-                corrResult.begin(), corrResult.end(), [](int a) { return a == 160; });
+
+            std::vector<int>::iterator it = corrResult.begin();
+            std::string bufferMessage = "Buffer: ";
+            for (int a = 0; a < 160; a++) {
+                bufferMessage += std::to_string(buffer[a]);
+                bufferMessage += ", ";
+            }
+            printMessage("before while loop");
+            printMessage(bufferMessage);
+
+            it = std::find_if(it, corrResult.end(), [](int a) { return a > 153; });
+
             std::string msg = "correlation succes at index: ";
-            msg += std::to_string(it - corrResult.begin());
+            int dist = std::distance(corrResult.begin(), it);
+            msg += std::to_string(dist);
             printMessage(msg);
+
+            // while ((it = std::find_if(it, corrResult.end(), [](int a) {
+            //             return a > 150;
+            //         })) != corrResult.end()) {
+            //     // Do something with iter
+            //     std::string msg = "correlation succes at index: ";
+            //     msg += std::distance(corrResult.begin(), it);
+            //     printMessage(msg);
+            //     std::cout << msg << std::endl;
+            //     it++;
+            // }
         }
     }
 
