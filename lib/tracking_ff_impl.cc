@@ -11,6 +11,7 @@
 #include <gnuradio/io_signature.h>
 #include <algorithm> // std::transform std::for_each
 #define _USE_MATH_DEFINES
+#include <math.h>
 #include <cmath>
 #include <iostream>
 
@@ -40,7 +41,7 @@ tracking_ff_impl::tracking_ff_impl()
     codePhase = channel->codePhase;
     carrFreq = channel->acquiredFreq;
     carrFreqBasis = channel->acquiredFreq;
-    codePhaseStep = codeFreq / sampleFreq;
+    codePhaseStep = codeFreq * samplePeriod;
     caCode = generateCa(channel->prn);
     caCode.insert(caCode.begin(), caCode.back());
     caCode.push_back(caCode.at(1));
@@ -77,29 +78,40 @@ int tracking_ff_impl::work(int noutput_items,
     float tEndPrompt = blksize * codePhaseStep + remCodePhase;
 
     for (int i = 0; i < noutput_items; i++) {
-        if (codePhase < 0 && i == (noutput_items + codePhase + 1))
-            codePhase = 0;
+        // if (codePhase < 0 && test < 1) {
+        //     std::cout << codePhase << std::endl;
+        //     // std::cout << codePhase << ",   ";
+        //     // std::cout << "{" << in[i] << ", " << output << " }, ";
+        //     test++;
+        // }
 
+
+        if (codePhase < 0 && i == (noutput_items + codePhase - 1)) {
+            codePhase = 0;
+        }
+
+        // if (codePhase == 0) {
         if (codePhase == 0) {
+            float iteratorStep = codePhaseStep * iterator;
+
             // Generate Early CA Code.
-            float earlyCode =
-                caCode.at(std::ceil(tStartEarly + codePhaseStep * iterator));
+            int earlyCode = caCode.at(std::ceil(tStartEarly + iteratorStep));
 
             // Generate Late CA Code.
-            float lateCode = caCode.at(std::ceil(tStartLate + codePhaseStep * iterator));
+            int lateCode = caCode.at(std::ceil(tStartLate + iteratorStep));
 
             // Generate Prompt CA Code.
-            float promptCode =
-                caCode.at(std::ceil(tStartPrompt + codePhaseStep * iterator));
+            int promptCode = caCode.at(std::ceil(tStartPrompt + iteratorStep));
 
             float trigArg =
-                (carrFreq * 2 * M_PI * (iterator / sampleFreq)) + remCarrPhase;
+                (carrFreq * 2 * M_PI * (iterator * samplePeriod)) + remCarrPhase;
 
-            float sin;
-            float cos;
-            sincosf(trigArg, &sin, &cos);
-            float qSignal = in[i] * cos;
-            float iSignal = in[i] * sin;
+
+            float carrSin;
+            float carrCos;
+            sincosf(trigArg, &carrSin, &carrCos);
+            float qSignal = in[i] * carrCos;
+            float iSignal = in[i] * carrSin;
 
             Q_E += earlyCode * qSignal;
             I_E += earlyCode * iSignal;
@@ -108,26 +120,29 @@ int tracking_ff_impl::work(int noutput_items,
             Q_L += lateCode * qSignal;
             I_L += lateCode * iSignal;
 
+
             // When 1 ms of data is processed update code and carr remaining phase values
             // and reset iterator else incr iterator
             if (iterator == blksize - 1) {
 
                 // Update output value to I_P
                 output = I_P;
+                remCarrPhase =
+                    fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase),
+                          (2 * M_PI));
 
-                remCarrPhase = fmodf(trigArg, 2 * M_PI);
-
+                // if (test < 150) {
+                //     // std::cout << i << ",   ";
+                //     std::cout << remCarrPhase << ",   ";
+                //     test++;
+                // }
                 // Update remaining Code Phase once per ms
-                remCodePhase = tEndPrompt - 1023;
-                if (std::abs(remCodePhase) > codePhaseStep) {
-                    remCodePhase = copysign(1.0, remCodePhase) * codePhaseStep;
-                } else
-                    remCodePhase = 0;
+                remCodePhase = tEndPrompt + codePhase - 1023;
 
                 //  Find PLL error and update carrier NCO
                 //  Implement carrier loop discriminator (phase detector)
-
                 float carrError = atan(Q_P / I_P) / (2.0 * M_PI);
+
 
                 // Implement carrier loop filter and generate NCO command
 
@@ -135,10 +150,10 @@ int tracking_ff_impl::work(int noutput_items,
                                 carrError * tau2carr;
                 oldCarrNco = carrNco;
                 oldCarrError = carrError;
-
-
                 //  Modify carrier freq based on NCO command
                 carrFreq = carrFreqBasis + carrNco;
+
+
                 float sqrtEarly = sqrt(I_E * I_E + Q_E * Q_E);
                 float sqrtLate = sqrt(I_L * I_L + Q_L * Q_L);
                 float codeError = (sqrtEarly - sqrtLate) / (sqrtEarly + sqrtLate);
@@ -157,10 +172,14 @@ int tracking_ff_impl::work(int noutput_items,
                 // Reset early late and prompt correlation results and set iterator to 0
                 Q_E = I_E = Q_P = I_P = Q_L = I_L = 0;
                 iterator = 0;
-                // udate blksize
+                // update blksize
                 blksize = std::ceil((codeLength - remCodePhase) / codePhaseStep);
-            } else
+
+                ms++;
+
+            } else {
                 iterator++;
+            }
         }
         out[i] = output;
     }

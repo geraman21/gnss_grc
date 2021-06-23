@@ -24,15 +24,18 @@ private:
     float I_E{ 0 }, Q_E{ 0 }, Q_P{ 0 }, I_P{ 0 }, I_L{ 0 }, Q_L{ 0 };
     int iterator = 0;
     int blksize = 38192;
+    int test = 0;
     int codePhase;
     float carrFreq;
     float carrFreqBasis;
     Channel* channel{ nullptr };
     std::vector<int> caCode;
-    float codeFreq = 1.023e6;
+    int ms = 0;
+    float codeFreq = 1023000;
     float oldCarrNco = 0.0;
     float oldCarrError = 0.0;
     float sampleFreq = 38.192e6;
+    float samplePeriod = 1 / sampleFreq;
     float codePhaseStep = 0;
     float dllCorrelatorSpacing = 0.5;
     float output = 0;
@@ -44,7 +47,7 @@ private:
     float oldCodeNco = 0;
     float oldCodeError = 0;
     float earlyLateSpc = 0.5;
-    float chippingRate = 1.023e6;
+    float chippingRate = 1023000;
     short pllNoiseBandwidth = 25;
     short dllNoiseBandwidth = 2;
     float pllDampingRatio = 0.7;
