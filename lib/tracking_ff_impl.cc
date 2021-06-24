@@ -78,13 +78,6 @@ int tracking_ff_impl::work(int noutput_items,
     float tEndPrompt = blksize * codePhaseStep + remCodePhase;
 
     for (int i = 0; i < noutput_items; i++) {
-        // if (codePhase < 0 && test < 1) {
-        //     std::cout << codePhase << std::endl;
-        //     // std::cout << codePhase << ",   ";
-        //     // std::cout << "{" << in[i] << ", " << output << " }, ";
-        //     test++;
-        // }
-
 
         if (codePhase < 0 && i == (noutput_items + codePhase - 1)) {
             codePhase = 0;
@@ -131,11 +124,6 @@ int tracking_ff_impl::work(int noutput_items,
                     fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase),
                           (2 * M_PI));
 
-                // if (test < 150) {
-                //     // std::cout << i << ",   ";
-                //     std::cout << remCarrPhase << ",   ";
-                //     test++;
-                // }
                 // Update remaining Code Phase once per ms
                 remCodePhase = tEndPrompt + codePhase - 1023;
 

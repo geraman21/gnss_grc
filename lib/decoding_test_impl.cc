@@ -65,7 +65,7 @@ int decoding_test_impl::work(int noutput_items,
     const input_type* in = reinterpret_cast<const input_type*>(input_items[0]);
     output_type* out = reinterpret_cast<output_type*>(output_items[0]);
 
-    // Do <+signal processing+>
+
     for (int i = 0; i < noutput_items; i++) {
         // buffer[iterator] = in[i] > 0 ? 1 : -1;
         if (in[i] > 0)
@@ -78,37 +78,30 @@ int decoding_test_impl::work(int noutput_items,
             convolve(&corrResult, buffer, reversePreamble, 14000, 160);
 
             std::vector<int>::iterator it = corrResult.begin();
-            std::string bufferMessage = "Buffer: ";
-            for (int a = 0; a < 160; a++) {
-                bufferMessage += std::to_string(buffer[a]);
-                bufferMessage += ", ";
+
+            // it = std::find_if(it, corrResult.end(), [](int a) { return a > 153; });
+
+            // std::string msg = "correlation succes at index: ";
+            // int dist = std::distance(corrResult.begin(), it);
+            // msg += std::to_string(dist);
+            // printMessage(msg);
+
+            while (it != corrResult.end()) {
+                it++;
+                it = std::find_if(
+                    it, corrResult.end(), [](int a) { return (a > 153 || a < -153); });
+                std::string msg = "correlation succes at index: ";
+                int dist = std::distance(corrResult.begin(), it);
+                msg += std::to_string(dist);
+                printMessage(msg);
             }
-            printMessage("before while loop");
-            printMessage(bufferMessage);
-
-            it = std::find_if(it, corrResult.end(), [](int a) { return a > 153; });
-
-            std::string msg = "correlation succes at index: ";
-            int dist = std::distance(corrResult.begin(), it);
-            msg += std::to_string(dist);
-            printMessage(msg);
-
-            // while ((it = std::find_if(it, corrResult.end(), [](int a) {
-            //             return a > 150;
-            //         })) != corrResult.end()) {
-            //     // Do something with iter
-            //     std::string msg = "correlation succes at index: ";
-            //     msg += std::distance(corrResult.begin(), it);
-            //     printMessage(msg);
-            //     std::cout << msg << std::endl;
-            //     it++;
-            // }
         }
+        iterator++;
     }
 
 
     // Tell runtime system how many output items we produced.
-    iterator++;
+
     return noutput_items;
 }
 
