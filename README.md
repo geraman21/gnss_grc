@@ -17,5 +17,10 @@ make
 sudo make install
 sudo ldconfig
 ```
+When gnu radio is installed not in the default folder, you have to specify the installation path. For example when using homebrew on mac use the following command:
+
+```
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/gnuradio/3.9.2.0_1
+```
 
 After this is done click refresh in GRC GUI, and the custom module with all its block should be available via module selection list.
