@@ -18,10 +18,14 @@ class decoding_test_impl : public decoding_test
 {
 private:
     int unsigned iterator{ 0 };
+    int test = 0;
     int PRN;
-    int buffer[20000];
+    int subframeStart, parityResult;
+    int buffer[50000];
     int reversePreamble[160];
+    int bitCounter{ 0 }, bitSum{ 0 };
     std::vector<int> corrResult;
+    std::vector<int> indices;
     void printMessage(std::string msg);
 
 
