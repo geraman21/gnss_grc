@@ -9,6 +9,7 @@
 #define INCLUDED_GNSS_DECODING_TEST_IMPL_H
 
 #include <gnss/decoding_test.h>
+#include <deque>
 #include <string>
 #include <vector>
 namespace gr {
@@ -20,12 +21,13 @@ private:
     int unsigned iterator{ 0 };
     int test = 0;
     int PRN;
-    int subframeStart, parityResult;
-    int buffer[50000];
-    int reversePreamble[160];
+    int codePhase = 0;
+    int subframeStart = 0;
+    int parityResult;
+    int buffer[37000];
+    std::deque<int> travelTimeQue;
     int bitCounter{ 0 }, bitSum{ 0 };
-    std::vector<int> corrResult;
-    std::vector<int> indices;
+    double result = 0;
     void printMessage(std::string msg);
 
 
