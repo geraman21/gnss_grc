@@ -4,7 +4,7 @@ category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.decoding_test(${prn})
+  make: gnss.decoding_test(${prn}, ${codePhase})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -14,6 +14,10 @@ templates:
 parameters:
 - id: prn
   label: Incoming PRN
+  dtype: int
+  value: 0
+- id: codePhase
+  label: CodePhase
   dtype: int
   value: 0
 #- id: ...

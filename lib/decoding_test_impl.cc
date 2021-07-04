@@ -20,24 +20,25 @@ namespace gnss {
 
 using input_type = float;
 using output_type = float;
-decoding_test::sptr decoding_test::make(int prn)
+decoding_test::sptr decoding_test::make(int prn, int codePhase)
 {
-    return gnuradio::make_block_sptr<decoding_test_impl>(prn);
+    return gnuradio::make_block_sptr<decoding_test_impl>(prn, codePhase);
 }
 
 /*
  * The private constructor
  */
-decoding_test_impl::decoding_test_impl(int prn)
+decoding_test_impl::decoding_test_impl(int prn, int codePhase)
     : gr::sync_block("decoding_test",
                      gr::io_signature::make(
                          1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(
                          1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
-      PRN(prn)
+      PRN(prn),
+      codePhase(codePhase)
 {
     message_port_register_out(pmt::string_to_symbol("result"));
-    codePhaseMs = 13404 / 38192;
+    codePhaseMs = codePhase / 38192;
     samplesForPreamble = 14000;
     int reversePreambleShort[]{ 1, 1, 0, 1, 0, 0, 0, 1 };
     int reversePreamble[160];

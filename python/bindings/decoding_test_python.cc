@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(decoding_test.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(b3e8c102fa26da280bc27da9327abd9e)                     */
+/* BINDTOOL_HEADER_FILE_HASH(5d6859e5d6651e9c5da24814f82753aa)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -30,17 +30,32 @@ namespace py = pybind11;
 void bind_decoding_test(py::module& m)
 {
 
-    using decoding_test = gr::gnss::decoding_test;
+    using decoding_test    = gr::gnss::decoding_test;
 
 
     py::class_<decoding_test,
-               gr::sync_block,
-               gr::block,
-               gr::basic_block,
-               std::shared_ptr<decoding_test>>(m, "decoding_test", D(decoding_test))
+        std::shared_ptr<decoding_test>>(m, "decoding_test", D(decoding_test))
 
-        .def(py::init(&decoding_test::make), py::arg("prn"), D(decoding_test, make))
+        .def(py::init(&decoding_test::make),
+           py::arg("prn"),
+           py::arg("codePhase"),
+           D(decoding_test,make)
+        )
+        
+
 
 
         ;
+
+
+
+
 }
+
+
+
+
+
+
+
+

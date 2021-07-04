@@ -21,7 +21,7 @@ private:
     int unsigned iterator{ 0 };
     int test = 0;
     int PRN;
-    int codePhase = 0;
+    int codePhase;
     int samplesForPreamble;
     int subframeStart = 0;
     int parityResult;
@@ -34,7 +34,7 @@ private:
 
 
 public:
-    decoding_test_impl(int prn);
+    decoding_test_impl(int prn, int codePhase);
     ~decoding_test_impl();
 
     // Where all the action really happens
