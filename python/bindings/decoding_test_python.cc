@@ -30,32 +30,20 @@ namespace py = pybind11;
 void bind_decoding_test(py::module& m)
 {
 
-    using decoding_test    = gr::gnss::decoding_test;
+    using decoding_test = gr::gnss::decoding_test;
 
 
     py::class_<decoding_test,
-        std::shared_ptr<decoding_test>>(m, "decoding_test", D(decoding_test))
+               gr::sync_block,
+               gr::block,
+               gr::basic_block,
+               std::shared_ptr<decoding_test>>(m, "decoding_test", D(decoding_test))
 
         .def(py::init(&decoding_test::make),
-           py::arg("prn"),
-           py::arg("codePhase"),
-           D(decoding_test,make)
-        )
-        
-
+             py::arg("prn"),
+             py::arg("codePhase"),
+             D(decoding_test, make))
 
 
         ;
-
-
-
-
 }
-
-
-
-
-
-
-
-

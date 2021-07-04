@@ -33,13 +33,14 @@ decoding_test_impl::decoding_test_impl(int prn, int codePhase)
                      gr::io_signature::make(
                          1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(
-                         1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
-      PRN(prn),
-      codePhase(codePhase)
+                         1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
 {
     message_port_register_out(pmt::string_to_symbol("result"));
-    codePhaseMs = codePhase / 38192;
     samplesForPreamble = 14000;
+    PRN = prn;
+    codePhaseMs = codePhase / 38192;
+    std::cout << "codePhase: " << codePhase << std::endl;
+    std::cout << "prn: " << prn << std::endl;
     int reversePreambleShort[]{ 1, 1, 0, 1, 0, 0, 0, 1 };
     int reversePreamble[160];
     for (int i = 0; i < 8; i++) {
@@ -98,7 +99,7 @@ int decoding_test_impl::work(int noutput_items,
         if (iterator > samplesForPreamble && iterator % 500 == 0) {
             int start = findSubframeStart(travelTimeQue);
             result = codePhaseMs + start;
-            std::cout << "this is the result" << result << std::endl;
+            std::cout << codePhaseMs << " - this is the result: " << start << std::endl;
         }
 
         // Find ephemerides. Min 5 subframes is required

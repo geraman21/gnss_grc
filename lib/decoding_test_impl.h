@@ -21,7 +21,6 @@ private:
     int unsigned iterator{ 0 };
     int test = 0;
     int PRN;
-    int codePhase;
     int samplesForPreamble;
     int subframeStart = 0;
     int parityResult;
