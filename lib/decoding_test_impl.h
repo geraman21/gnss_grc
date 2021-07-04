@@ -25,7 +25,7 @@ private:
     int subframeStart = 0;
     int parityResult;
     int buffer[37000];
-    float codePhaseMs;
+    double codePhaseMs;
     std::deque<int> travelTimeQue;
     int bitCounter{ 0 }, bitSum{ 0 };
     double result = 0;

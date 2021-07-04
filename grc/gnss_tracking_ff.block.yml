@@ -4,7 +4,7 @@ category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.tracking_ff()
+  make: gnss.tracking_ff(${t_prn}, ${t_freq}, ${t_codePhase})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -12,6 +12,18 @@ templates:
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
+- id: t_prn
+  label: Incoming PRN
+  dtype: int
+  value: 0
+- id: t_codePhase
+  label: Code Phase
+  dtype: int
+  value: 0
+- id: t_freq
+  label: Init Freq
+  dtype: float
+  value: 0
 # - id: parametername_replace_me
 #   label: FIX ME:
 #   dtype: string
@@ -30,12 +42,12 @@ parameters:
 inputs:
 - label: in
   dtype: float
-  optional: false
+  optional: true
 
 outputs:
 - label: out
   dtype: float
-  optional: false
+  optional: true
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
 file_format: 1

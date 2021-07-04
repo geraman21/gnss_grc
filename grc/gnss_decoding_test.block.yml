@@ -17,7 +17,7 @@ parameters:
   dtype: int
   value: 0
 - id: codePhase
-  label: CodePhase
+  label: Code Phases
   dtype: int
   value: 0
 #- id: ...

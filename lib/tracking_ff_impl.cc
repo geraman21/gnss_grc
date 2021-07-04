@@ -21,23 +21,24 @@ namespace gnss {
 
 using input_type = float;
 using output_type = float;
-tracking_ff::sptr tracking_ff::make()
+tracking_ff::sptr tracking_ff::make(int t_prn, float t_freq, int t_codePhase)
 {
-    return gnuradio::make_block_sptr<tracking_ff_impl>();
+    return gnuradio::make_block_sptr<tracking_ff_impl>(t_prn, t_freq, t_codePhase);
 }
 
 
 /*
  * The private constructor
  */
-tracking_ff_impl::tracking_ff_impl()
+tracking_ff_impl::tracking_ff_impl(int t_prn, float t_freq, int t_codePhase)
     : gr::sync_block("tracking_ff",
                      gr::io_signature::make(
                          1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(
                          1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
 {
-    channel = new Channel(21, 9547426.34201050, 13404, 'T');
+    // channel = new Channel(21, 9547426.34201050, 13404, 'T');
+    channel = new Channel(t_prn, t_freq, t_codePhase, 'T');
     codePhase = channel->codePhase;
     carrFreq = channel->acquiredFreq;
     carrFreqBasis = channel->acquiredFreq;

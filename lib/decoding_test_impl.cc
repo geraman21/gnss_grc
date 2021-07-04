@@ -38,9 +38,9 @@ decoding_test_impl::decoding_test_impl(int prn, int codePhase)
     message_port_register_out(pmt::string_to_symbol("result"));
     samplesForPreamble = 14000;
     PRN = prn;
-    codePhaseMs = codePhase / 38192;
-    std::cout << "codePhase: " << codePhase << std::endl;
-    std::cout << "prn: " << prn << std::endl;
+    std::cout << "code Phase: " << codePhase << std::endl;
+    codePhaseMs = (codePhase * 1.0) / 38192;
+    std::cout << "code Phase MS: " << codePhaseMs << std::endl;
     int reversePreambleShort[]{ 1, 1, 0, 1, 0, 0, 0, 1 };
     int reversePreamble[160];
     for (int i = 0; i < 8; i++) {
@@ -99,7 +99,7 @@ int decoding_test_impl::work(int noutput_items,
         if (iterator > samplesForPreamble && iterator % 500 == 0) {
             int start = findSubframeStart(travelTimeQue);
             result = codePhaseMs + start;
-            std::cout << codePhaseMs << " - this is the result: " << start << std::endl;
+            std::cout << codePhaseMs << " - this is the result: " << result << std::endl;
         }
 
         // Find ephemerides. Min 5 subframes is required

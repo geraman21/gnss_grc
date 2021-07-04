@@ -60,6 +60,7 @@ private:
 
 
 public:
+    tracking_ff_impl(int t_prn, float t_freq, int t_codePhase);
     tracking_ff_impl();
     ~tracking_ff_impl();
 
