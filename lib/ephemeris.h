@@ -14,6 +14,7 @@ class Ephemeris
 {
 
 public:
+    void printEphemeris(Ephemeris* ephResults);
     Ephemeris(std::vector<int>& navBits);
     double gpsPi = 3.1415926535898;
     int weekNumber;

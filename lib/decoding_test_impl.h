@@ -22,9 +22,11 @@ private:
     int test = 0;
     int PRN;
     int codePhase = 0;
+    int samplesForPreamble;
     int subframeStart = 0;
     int parityResult;
     int buffer[37000];
+    float codePhaseMs;
     std::deque<int> travelTimeQue;
     int bitCounter{ 0 }, bitSum{ 0 };
     double result = 0;

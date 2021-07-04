@@ -160,7 +160,7 @@ int parityCheck(std::vector<int>& bits, int index)
 int findSubframeStart(std::deque<int>& buffer)
 {
     int subframeStart = 0;
-    auto corrResult = std::vector<int>(14159);
+    auto corrResult = std::vector<int>(buffer.size() + 159);
     // Invert and spread preamble over 20 to find correlation using convolve function: {
     // 1, 1, 0, 1, 0, 0, 0, 1 }
 
@@ -176,7 +176,7 @@ int findSubframeStart(std::deque<int>& buffer)
     };
 
     std::vector<int> indices;
-    convolve(&corrResult, buffer, reversePreamble, 14000, 160);
+    convolve(&corrResult, buffer, reversePreamble, buffer.size(), 160);
 
     std::vector<int>::iterator it = corrResult.begin();
 
@@ -188,9 +188,10 @@ int findSubframeStart(std::deque<int>& buffer)
         indices.push_back(dist - 159);
     }
 
-    for (int i = indices.size() - 1; i > 0; i--) {
+    for (int i = 0; i < indices.size(); i++) {
         for (int k = 0; k < i; k++) {
-            if (indices.at(i) - indices.at(k) == 6000) {
+            if (indices.at(i) - indices.at(k) == 6000 && indices.at(k) - 40 >= 0 &&
+                indices.at(k) + 60 * 20 < buffer.size()) {
                 // Re-read bit vales for preamble verification ==============
                 // Preamble occurrence is verified by checking the parity of
                 // the first two words in the subframe. Now it is assumed that
@@ -228,8 +229,8 @@ int findSubframeStart(std::deque<int>& buffer)
                 int parity1 = parityCheck(split_lo, index);
                 int parity2 = parityCheck(split_hi, index);
 
-                std::cout << "parity low: " << parity1 << std::endl;
-                std::cout << "parity high: " << parity2 << std::endl;
+                // std::cout << "parity low: " << parity1 << std::endl;
+                // std::cout << "parity high: " << parity2 << std::endl;
 
                 if (parity1 != 0 && parity2 != 0) {
                     subframeStart = index;
@@ -278,37 +279,4 @@ vecSelector(std::vector<int>& source, int start, int end, int start1, int end1)
     std::vector<int> temp(source.begin() + start - 1, source.begin() + end);
     temp.insert(temp.end(), source.begin() + start1 - 1, source.begin() + end1);
     return temp;
-}
-
-void printEphemeris(Ephemeris* ephResults)
-{
-    std::cout << "weekNumber : " << ephResults->weekNumber << std::endl;
-    std::cout << "accuracy : " << ephResults->accuracy << std::endl;
-    std::cout << "health : " << ephResults->health << std::endl;
-    std::cout << "T_GD : " << ephResults->T_GD << std::endl;
-    std::cout << "IODC : " << ephResults->IODC << std::endl;
-    std::cout << "t_oc : " << ephResults->t_oc << std::endl;
-    std::cout << "a_f2: " << ephResults->a_f2 << std::endl;
-    std::cout << "a_f1 : " << ephResults->a_f1 << std::endl;
-    std::cout << "a_f0 : " << ephResults->a_f0 << std::endl;
-    std::cout << "=========================== case 2 ================" << std::endl;
-    std::cout << "IODE_sf2 : " << ephResults->IODE_sf2 << std::endl;
-    std::cout << "C_rs : " << ephResults->C_rs << std::endl;
-    std::cout << "deltan : " << ephResults->deltan << std::endl;
-    std::cout << "M_0 : " << ephResults->M_0 << std::endl;
-    std::cout << " C_uc: " << ephResults->C_uc << std::endl;
-    std::cout << "e : " << ephResults->e << std::endl;
-    std::cout << "C_us : " << ephResults->C_us << std::endl;
-    std::cout << " sqrtA: " << ephResults->sqrtA << std::endl;
-    std::cout << "t_oe : " << ephResults->t_oe << std::endl;
-    std::cout << "=========================== case 3 ================" << std::endl;
-    std::cout << "C_ic : " << ephResults->C_ic << std::endl;
-    std::cout << "omega_0 : " << ephResults->omega_0 << std::endl;
-    std::cout << "C_is : " << ephResults->C_is << std::endl;
-    std::cout << "i_0 : " << ephResults->i_0 << std::endl;
-    std::cout << " C_rc: " << ephResults->C_rc << std::endl;
-    std::cout << "omega : " << ephResults->omega << std::endl;
-    std::cout << "omegaDot : " << ephResults->omegaDot << std::endl;
-    std::cout << " IODE_sf3: " << ephResults->IODE_sf3 << std::endl;
-    std::cout << "iDot : " << ephResults->iDot << std::endl;
 }

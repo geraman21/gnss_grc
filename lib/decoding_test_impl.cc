@@ -37,6 +37,8 @@ decoding_test_impl::decoding_test_impl(int prn)
       PRN(prn)
 {
     message_port_register_out(pmt::string_to_symbol("result"));
+    codePhaseMs = 13404 / 38192;
+    samplesForPreamble = 14000;
     int reversePreambleShort[]{ 1, 1, 0, 1, 0, 0, 0, 1 };
     int reversePreamble[160];
     for (int i = 0; i < 8; i++) {
@@ -67,6 +69,14 @@ int decoding_test_impl::work(int noutput_items,
 
 
     for (int i = 0; i < noutput_items; i++) {
+
+        // Add data to travel time queue
+
+        if (iterator > samplesForPreamble - 1) {
+            travelTimeQue.pop_front();
+            in[i] > 0 ? travelTimeQue.push_back(1) : travelTimeQue.push_back(-1);
+        }
+
         // Collect enough data into a buffer to calculate Ephemerides later
         if (iterator < 37000) {
             if (in[i] > 0)
@@ -76,10 +86,18 @@ int decoding_test_impl::work(int noutput_items,
         }
 
         // Find the start of a Sub-frame
-        if (iterator == 13999) {
-            travelTimeQue.assign(buffer, buffer + 14000);
+        if (iterator == samplesForPreamble - 1) {
+            travelTimeQue.assign(buffer, buffer + samplesForPreamble);
             subframeStart = findSubframeStart(travelTimeQue);
             std::cout << subframeStart << std::endl;
+        }
+
+        // Find updated subframe start and pass it as a result for further nav
+        // calculations
+        if (iterator > samplesForPreamble && iterator % 500 == 0) {
+            int start = findSubframeStart(travelTimeQue);
+            result = codePhaseMs + start;
+            std::cout << "this is the result" << result << std::endl;
         }
 
         // Find ephemerides. Min 5 subframes is required
