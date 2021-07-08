@@ -52,6 +52,8 @@ decoding_test_impl::decoding_test_impl(int prn, int codePhase)
         }
     }
 }
+// auto size = sizeof(geramans_class);
+// auto pmt = pmt::make_blob(reinterpret_cast<void*>(&myobject), size);
 /*
  * Our virtual destructor.
  */
@@ -91,6 +93,7 @@ int decoding_test_impl::work(int noutput_items,
         if (iterator == samplesForPreamble - 1) {
             travelTimeQue.assign(buffer, buffer + samplesForPreamble);
             subframeStart = findSubframeStart(travelTimeQue);
+            result = codePhaseMs + subframeStart;
             std::cout << subframeStart << std::endl;
         }
 
@@ -122,7 +125,6 @@ int decoding_test_impl::work(int noutput_items,
                 }
             }
 
-            std::cout << "Nav Bits size: " << navBits.size() << std::endl;
             Ephemeris* ephResults = new Ephemeris(navBits);
         }
 
