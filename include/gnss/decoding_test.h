@@ -33,7 +33,7 @@ public:
      * class. gnss::decoding_test::make is the public interface for
      * creating new instances.
      */
-    static sptr make(int prn, int codePhase);
+    static sptr make(int channelNum, int codePhase);
 };
 
 } // namespace gnss

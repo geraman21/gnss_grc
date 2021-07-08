@@ -18,9 +18,9 @@ namespace gnss {
 class decoding_test_impl : public decoding_test
 {
 private:
+    std::string channel;
     int unsigned iterator{ 0 };
     int test = 0;
-    int PRN;
     int samplesForPreamble;
     int subframeStart = 0;
     int parityResult;
@@ -29,11 +29,11 @@ private:
     std::deque<int> travelTimeQue;
     int bitCounter{ 0 }, bitSum{ 0 };
     double result = 0;
-    void printMessage(std::string msg);
+    // void printMessage(std::string msg);
 
 
 public:
-    decoding_test_impl(int prn, int codePhase);
+    decoding_test_impl(int channelNum, int codePhase);
     ~decoding_test_impl();
 
     // Where all the action really happens

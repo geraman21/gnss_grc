@@ -20,24 +20,26 @@ namespace gnss {
 
 using input_type = float;
 using output_type = float;
-decoding_test::sptr decoding_test::make(int prn, int codePhase)
+decoding_test::sptr decoding_test::make(int channelNum, int codePhase)
 {
-    return gnuradio::make_block_sptr<decoding_test_impl>(prn, codePhase);
+    return gnuradio::make_block_sptr<decoding_test_impl>(channelNum, codePhase);
 }
 
 /*
  * The private constructor
  */
-decoding_test_impl::decoding_test_impl(int prn, int codePhase)
+decoding_test_impl::decoding_test_impl(int channelNum, int codePhase)
     : gr::sync_block("decoding_test",
                      gr::io_signature::make(
                          1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
                      gr::io_signature::make(
                          1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
 {
-    message_port_register_out(pmt::string_to_symbol("result"));
+    channel = std::to_string(channelNum) + "channel";
+    message_port_register_out(pmt::string_to_symbol(channel));
+
     samplesForPreamble = 14000;
-    PRN = prn;
+    std::cout << "Channel name: " << channel << std::endl;
     std::cout << "code Phase: " << codePhase << std::endl;
     codePhaseMs = (codePhase * 1.0) / 38192;
     std::cout << "code Phase MS: " << codePhaseMs << std::endl;
@@ -52,17 +54,16 @@ decoding_test_impl::decoding_test_impl(int prn, int codePhase)
         }
     }
 }
-// auto size = sizeof(geramans_class);
-// auto pmt = pmt::make_blob(reinterpret_cast<void*>(&myobject), size);
+
 /*
  * Our virtual destructor.
  */
 decoding_test_impl::~decoding_test_impl() {}
 
-void decoding_test_impl::printMessage(std::string msg)
-{
-    message_port_pub(pmt::string_to_symbol("result"), pmt::string_to_symbol(msg));
-}
+// void decoding_test_impl::printMessage(std::string msg)
+// {
+//     message_port_pub(pmt::string_to_symbol("result"), pmt::string_to_symbol(msg));
+// }
 
 int decoding_test_impl::work(int noutput_items,
                              gr_vector_const_void_star& input_items,
@@ -126,6 +127,14 @@ int decoding_test_impl::work(int noutput_items,
             }
 
             Ephemeris* ephResults = new Ephemeris(navBits);
+
+            auto size = sizeof(Ephemeris);
+            auto pmt = pmt::make_blob(reinterpret_cast<void*>(&ephResults), size);
+            // geramans_class *data = reinterpret_cast<geramans_class
+            // *>(pmt::blob_data(receivedBlob)));
+            // geramans_class data_object(*(reinterpret_cast<const
+            // geramans_class*>(pmt::blob_data(receivedBlob))));
+            message_port_pub(pmt::string_to_symbol(channel), pmt);
         }
 
         out[i] = result;

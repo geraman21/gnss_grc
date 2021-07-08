@@ -18,6 +18,7 @@ list(APPEND gnss_sources
     ephemeris.cc
     channel.cc
     decoding_test_impl.cc
+    nav_solution_impl.cc
 )
 
 set(gnss_sources "${gnss_sources}" PARENT_SCOPE)
