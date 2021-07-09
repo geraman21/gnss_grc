@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+#include "ephemeris.h"
 #include "nav_solution_impl.h"
 #include <gnuradio/io_signature.h>
 
@@ -29,6 +30,13 @@ nav_solution_impl::nav_solution_impl()
                 gr::io_signature::make(
                     1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
 {
+    channels.assign(8, Ephemeris());
+    message_port_register_in(pmt::string_to_symbol("ephemeris"));
+    set_msg_handler(pmt::mp("ephemeris"), [this](const pmt::pmt_t& msg) {
+        Ephemeris data_object(*(reinterpret_cast<const Ephemeris*>(pmt::blob_data(msg))));
+        data_object.printEphemeris();
+        channels.at(data_object.channelNumber) = data_object;
+    });
 }
 
 /*
@@ -53,6 +61,10 @@ int nav_solution_impl::general_work(int noutput_items,
 
 
     // Do <+signal processing+>
+    for (int i = 0; i < noutput_items; i++) {
+        out[i] = in[i];
+    }
+
     // Tell runtime system how many input items we consumed on
     // each input stream.
     consume_each(noutput_items);

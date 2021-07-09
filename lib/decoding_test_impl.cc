@@ -35,14 +35,11 @@ decoding_test_impl::decoding_test_impl(int channelNum, int codePhase)
                      gr::io_signature::make(
                          1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
 {
-    channel = std::to_string(channelNum) + "channel";
-    message_port_register_out(pmt::string_to_symbol(channel));
+    channel = channelNum;
+    message_port_register_out(pmt::string_to_symbol("ephemeris"));
 
     samplesForPreamble = 14000;
-    std::cout << "Channel name: " << channel << std::endl;
-    std::cout << "code Phase: " << codePhase << std::endl;
     codePhaseMs = (codePhase * 1.0) / 38192;
-    std::cout << "code Phase MS: " << codePhaseMs << std::endl;
     int reversePreambleShort[]{ 1, 1, 0, 1, 0, 0, 0, 1 };
     int reversePreamble[160];
     for (int i = 0; i < 8; i++) {
@@ -95,7 +92,6 @@ int decoding_test_impl::work(int noutput_items,
             travelTimeQue.assign(buffer, buffer + samplesForPreamble);
             subframeStart = findSubframeStart(travelTimeQue);
             result = codePhaseMs + subframeStart;
-            std::cout << subframeStart << std::endl;
         }
 
         // Find updated subframe start and pass it as a result for further nav
@@ -103,7 +99,6 @@ int decoding_test_impl::work(int noutput_items,
         if (iterator > samplesForPreamble && iterator % 500 == 0) {
             int start = findSubframeStart(travelTimeQue);
             result = codePhaseMs + start;
-            std::cout << codePhaseMs << " - this is the result: " << result << std::endl;
         }
 
         // Find ephemerides. Min 5 subframes is required
@@ -126,15 +121,12 @@ int decoding_test_impl::work(int noutput_items,
                 }
             }
 
-            Ephemeris* ephResults = new Ephemeris(navBits);
+            Ephemeris ephResults(navBits, channel);
 
             auto size = sizeof(Ephemeris);
             auto pmt = pmt::make_blob(reinterpret_cast<void*>(&ephResults), size);
-            // geramans_class *data = reinterpret_cast<geramans_class
-            // *>(pmt::blob_data(receivedBlob)));
-            // geramans_class data_object(*(reinterpret_cast<const
-            // geramans_class*>(pmt::blob_data(receivedBlob))));
-            message_port_pub(pmt::string_to_symbol(channel), pmt);
+
+            message_port_pub(pmt::string_to_symbol("ephemeris"), pmt);
         }
 
         out[i] = result;

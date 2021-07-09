@@ -14,8 +14,10 @@ class Ephemeris
 {
 
 public:
-    void printEphemeris(Ephemeris* ephResults);
-    Ephemeris(std::vector<int>& navBits);
+    void printEphemeris();
+    Ephemeris(std::vector<int>& navBits, int channel);
+    Ephemeris();
+    int channelNumber = -1;
     double gpsPi = 3.1415926535898;
     int weekNumber;
     int accuracy;

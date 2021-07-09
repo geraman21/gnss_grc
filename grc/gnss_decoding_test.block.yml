@@ -13,7 +13,7 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
 - id: channelNum
-  label: Channel Number (1-8)
+  label: Channel Number (0-7)
   dtype: int
   value: 0
 - id: codePhase

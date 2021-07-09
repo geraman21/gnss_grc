@@ -7,8 +7,9 @@
 
 #ifndef INCLUDED_GNSS_NAV_SOLUTION_IMPL_H
 #define INCLUDED_GNSS_NAV_SOLUTION_IMPL_H
-
+#include "ephemeris.h"
 #include <gnss/nav_solution.h>
+#include <vector>
 
 namespace gr {
 namespace gnss {
@@ -21,6 +22,7 @@ private:
 public:
     nav_solution_impl();
     ~nav_solution_impl();
+    std::vector<Ephemeris> channels;
 
     // Where all the action really happens
     void forecast(int noutput_items, gr_vector_int& ninput_items_required);

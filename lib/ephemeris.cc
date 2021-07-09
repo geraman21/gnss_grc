@@ -5,41 +5,42 @@
 #include <iostream>
 #include <vector>
 
-void printEphemeris(Ephemeris* ephResults)
+void Ephemeris::printEphemeris()
 {
-    std::cout << "weekNumber : " << ephResults->weekNumber << std::endl;
-    std::cout << "accuracy : " << ephResults->accuracy << std::endl;
-    std::cout << "health : " << ephResults->health << std::endl;
-    std::cout << "T_GD : " << ephResults->T_GD << std::endl;
-    std::cout << "IODC : " << ephResults->IODC << std::endl;
-    std::cout << "t_oc : " << ephResults->t_oc << std::endl;
-    std::cout << "a_f2: " << ephResults->a_f2 << std::endl;
-    std::cout << "a_f1 : " << ephResults->a_f1 << std::endl;
-    std::cout << "a_f0 : " << ephResults->a_f0 << std::endl;
+    std::cout << "weekNumber : " << weekNumber << std::endl;
+    std::cout << "accuracy : " << accuracy << std::endl;
+    std::cout << "health : " << health << std::endl;
+    std::cout << "T_GD : " << T_GD << std::endl;
+    std::cout << "IODC : " << IODC << std::endl;
+    std::cout << "t_oc : " << t_oc << std::endl;
+    std::cout << "a_f2: " << a_f2 << std::endl;
+    std::cout << "a_f1 : " << a_f1 << std::endl;
+    std::cout << "a_f0 : " << a_f0 << std::endl;
     std::cout << "=========================== case 2 ================" << std::endl;
-    std::cout << "IODE_sf2 : " << ephResults->IODE_sf2 << std::endl;
-    std::cout << "C_rs : " << ephResults->C_rs << std::endl;
-    std::cout << "deltan : " << ephResults->deltan << std::endl;
-    std::cout << "M_0 : " << ephResults->M_0 << std::endl;
-    std::cout << " C_uc: " << ephResults->C_uc << std::endl;
-    std::cout << "e : " << ephResults->e << std::endl;
-    std::cout << "C_us : " << ephResults->C_us << std::endl;
-    std::cout << " sqrtA: " << ephResults->sqrtA << std::endl;
-    std::cout << "t_oe : " << ephResults->t_oe << std::endl;
+    std::cout << "IODE_sf2 : " << IODE_sf2 << std::endl;
+    std::cout << "C_rs : " << C_rs << std::endl;
+    std::cout << "deltan : " << deltan << std::endl;
+    std::cout << "M_0 : " << M_0 << std::endl;
+    std::cout << " C_uc: " << C_uc << std::endl;
+    std::cout << "e : " << e << std::endl;
+    std::cout << "C_us : " << C_us << std::endl;
+    std::cout << " sqrtA: " << sqrtA << std::endl;
+    std::cout << "t_oe : " << t_oe << std::endl;
     std::cout << "=========================== case 3 ================" << std::endl;
-    std::cout << "C_ic : " << ephResults->C_ic << std::endl;
-    std::cout << "omega_0 : " << ephResults->omega_0 << std::endl;
-    std::cout << "C_is : " << ephResults->C_is << std::endl;
-    std::cout << "i_0 : " << ephResults->i_0 << std::endl;
-    std::cout << " C_rc: " << ephResults->C_rc << std::endl;
-    std::cout << "omega : " << ephResults->omega << std::endl;
-    std::cout << "omegaDot : " << ephResults->omegaDot << std::endl;
-    std::cout << " IODE_sf3: " << ephResults->IODE_sf3 << std::endl;
-    std::cout << "iDot : " << ephResults->iDot << std::endl;
+    std::cout << "C_ic : " << C_ic << std::endl;
+    std::cout << "omega_0 : " << omega_0 << std::endl;
+    std::cout << "C_is : " << C_is << std::endl;
+    std::cout << "i_0 : " << i_0 << std::endl;
+    std::cout << " C_rc: " << C_rc << std::endl;
+    std::cout << "omega : " << omega << std::endl;
+    std::cout << "omegaDot : " << omegaDot << std::endl;
+    std::cout << " IODE_sf3: " << IODE_sf3 << std::endl;
+    std::cout << "iDot : " << iDot << std::endl;
 }
 
-Ephemeris::Ephemeris(std::vector<int>& navBits)
+Ephemeris::Ephemeris(std::vector<int>& navBits, int channel)
 {
+    channelNumber = channel;
     int D30Star = navBits.at(0);
     navBits.erase(navBits.begin());
 
@@ -122,3 +123,4 @@ Ephemeris::Ephemeris(std::vector<int>& navBits)
         TOW = bin2dec(vecSelector(subframe, 37, 47)) * 60 - 30;
     }
 }
+Ephemeris::Ephemeris() {}

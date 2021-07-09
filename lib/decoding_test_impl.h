@@ -18,7 +18,7 @@ namespace gnss {
 class decoding_test_impl : public decoding_test
 {
 private:
-    std::string channel;
+    int channel;
     int unsigned iterator{ 0 };
     int test = 0;
     int samplesForPreamble;
