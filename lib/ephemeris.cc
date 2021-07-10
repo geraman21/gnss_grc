@@ -48,8 +48,6 @@ Ephemeris::Ephemeris(std::vector<int>& navBits, int channel)
         std::vector<int> subframe(navBits.begin() + 300 * (i - 1),
                                   navBits.begin() + 300 * i);
 
-
-        std::cout << std::endl;
         // Correct polarity of the data bits in all 10 words
 
         for (int j = 1; j <= 10; j++) {
@@ -75,9 +73,8 @@ Ephemeris::Ephemeris(std::vector<int>& navBits, int channel)
 
             for (auto i :
                  std::vector<int>(subframe.begin() + 73 - 1, subframe.begin() + 76)) {
-                std::cout << i;
             };
-            std::cout << std::endl;
+
 
             health = bin2dec(vecSelector(subframe, 77, 82));
             T_GD = twosComp2dec(vecSelector(subframe, 197, 204)) * pow(2, -31);

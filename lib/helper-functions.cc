@@ -1,6 +1,7 @@
 #include "ephemeris.h"
 #include "helper-functions.h"
 #include <algorithm>
+#include <cmath>
 #include <deque>
 #include <iostream>
 #include <vector>
@@ -234,11 +235,12 @@ int findSubframeStart(std::deque<int>& buffer)
 
                 if (parity1 != 0 && parity2 != 0) {
                     subframeStart = index;
-                    break;
+                    goto endloop;
                 }
             }
         }
     }
+endloop:
     return subframeStart;
 }
 
@@ -279,4 +281,23 @@ vecSelector(std::vector<int>& source, int start, int end, int start1, int end1)
     std::vector<int> temp(source.begin() + start - 1, source.begin() + end);
     temp.insert(temp.end(), source.begin() + start1 - 1, source.begin() + end1);
     return temp;
+}
+
+std::vector<float>
+getPseudoRanges(std::vector<const void*>& data, int index, float startOffset, float c)
+{
+    std::vector<float> pseudoRanges(data.size());
+    for (int i = 0; i < data.size(); i++) {
+        const float* in = reinterpret_cast<const float*>(data[i]);
+        pseudoRanges.at(i) = in[index];
+    }
+
+    int minimum = floor(*std::min_element(pseudoRanges.begin(), pseudoRanges.end()));
+    // std::cout << "minimum: " << minimum << std::endl;
+    std::for_each(
+        pseudoRanges.begin(), pseudoRanges.end(), [minimum, startOffset, c](float a) {
+            a = (a - minimum + startOffset) * c / 1000;
+        });
+
+    return pseudoRanges;
 }

@@ -6,6 +6,7 @@
  */
 
 #include "ephemeris.h"
+#include "helper-functions.h"
 #include "nav_solution_impl.h"
 #include <gnuradio/io_signature.h>
 
@@ -34,7 +35,7 @@ nav_solution_impl::nav_solution_impl()
     message_port_register_in(pmt::string_to_symbol("ephemeris"));
     set_msg_handler(pmt::mp("ephemeris"), [this](const pmt::pmt_t& msg) {
         Ephemeris data_object(*(reinterpret_cast<const Ephemeris*>(pmt::blob_data(msg))));
-        data_object.printEphemeris();
+        // data_object.printEphemeris();
         channels.at(data_object.channelNumber) = data_object;
     });
 }
@@ -46,8 +47,8 @@ nav_solution_impl::~nav_solution_impl() {}
 
 void nav_solution_impl::forecast(int noutput_items, gr_vector_int& ninput_items_required)
 {
-#pragma message( \
-    "implement a forecast that fills in how many items on each input you need to produce noutput_items and remove this warning")
+    // #pragma message( \
+//     "implement a forecast that fills in how many items on each input you need to produce noutput_items and remove this warning")
     /* <+forecast+> e.g. ninput_items_required[0] = noutput_items */
 }
 
@@ -59,10 +60,37 @@ int nav_solution_impl::general_work(int noutput_items,
     const input_type* in = reinterpret_cast<const input_type*>(input_items[0]);
     output_type* out = reinterpret_cast<output_type*>(output_items[0]);
 
+    // if (test < 10) {
+    //     test++;
+    //     std::cout << "ninput_items: " << input_items.size() << std::endl;
+    // }
+
+    if (initDelay > 0) {
+        initDelay -= noutput_items;
+    }
+
 
     // Do <+signal processing+>
-    for (int i = 0; i < noutput_items; i++) {
+    for (int i = 0; i < ninput_items[0]; i++) {
+
+        if (initDelay < 0 && i == (noutput_items + initDelay - 1)) {
+            initDelay = 0;
+        }
+
+        if (initDelay == 0 && iterator % 500 == 0) {
+            pseudoRanges = getPseudoRanges(input_items, i, startOffset, c);
+            if (test < 50) {
+                std::cout << "PSEUDO RANGES" << std::endl;
+                for (auto range : pseudoRanges) {
+                    std::cout << range << ",  ";
+                }
+                std::cout << std::endl;
+            }
+            test++;
+        }
+
         out[i] = in[i];
+        iterator++;
     }
 
     // Tell runtime system how many input items we consumed on

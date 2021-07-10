@@ -23,6 +23,13 @@ public:
     nav_solution_impl();
     ~nav_solution_impl();
     std::vector<Ephemeris> channels;
+    int test = 0;
+    unsigned int iterator = 0;
+    int initDelay = 250;
+    // The speed of light, [m/s]
+    float c = 299792458;
+    float startOffset = 68.802;
+    std::vector<float> pseudoRanges;
 
     // Where all the action really happens
     void forecast(int noutput_items, gr_vector_int& ninput_items_required);
