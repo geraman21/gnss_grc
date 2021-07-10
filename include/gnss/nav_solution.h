@@ -8,7 +8,7 @@
 #ifndef INCLUDED_GNSS_NAV_SOLUTION_H
 #define INCLUDED_GNSS_NAV_SOLUTION_H
 
-#include <gnuradio/block.h>
+#include <gnuradio/sync_block.h>
 #include <gnss/api.h>
 
 namespace gr {
@@ -19,7 +19,7 @@ namespace gnss {
  * \ingroup gnss
  *
  */
-class GNSS_API nav_solution : virtual public gr::block
+class GNSS_API nav_solution : virtual public gr::sync_block
 {
 public:
     typedef std::shared_ptr<nav_solution> sptr;

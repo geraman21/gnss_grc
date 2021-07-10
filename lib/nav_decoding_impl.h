@@ -5,17 +5,17 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef INCLUDED_GNSS_DECODING_TEST_IMPL_H
-#define INCLUDED_GNSS_DECODING_TEST_IMPL_H
-
-#include <gnss/decoding_test.h>
+#ifndef INCLUDED_GNSS_NAV_DECODING_IMPL_H
+#define INCLUDED_GNSS_NAV_DECODING_IMPL_H
+#include <gnss/nav_decoding.h>
 #include <deque>
 #include <string>
 #include <vector>
+
 namespace gr {
 namespace gnss {
 
-class decoding_test_impl : public decoding_test
+class nav_decoding_impl : public nav_decoding
 {
 private:
     int channel;
@@ -29,12 +29,10 @@ private:
     std::deque<int> travelTimeQue;
     int bitCounter{ 0 }, bitSum{ 0 };
     double result = 0;
-    // void printMessage(std::string msg);
-
 
 public:
-    decoding_test_impl(int channelNum, int codePhase);
-    ~decoding_test_impl();
+    nav_decoding_impl(int channelNum, int codePhase);
+    ~nav_decoding_impl();
 
     // Where all the action really happens
     int work(int noutput_items,
@@ -45,4 +43,4 @@ public:
 } // namespace gnss
 } // namespace gr
 
-#endif /* INCLUDED_GNSS_DECODING_TEST_IMPL_H */
+#endif /* INCLUDED_GNSS_NAV_DECODING_IMPL_H */

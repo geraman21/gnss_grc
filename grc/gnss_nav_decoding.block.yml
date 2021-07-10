@@ -1,10 +1,10 @@
-id: gnss_decoding_test
-label: Nav-data extractor
+id: gnss_nav_decoding
+label: nav_decoding
 category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.decoding_test(${channelNum}, ${codePhase})
+  make: gnss.nav_decoding(${channelNum}, ${codePhase})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:

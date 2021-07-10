@@ -25,11 +25,11 @@ nav_solution::sptr nav_solution::make()
  * The private constructor
  */
 nav_solution_impl::nav_solution_impl()
-    : gr::block("nav_solution",
-                gr::io_signature::make(
-                    1 /* min inputs */, 8 /* max inputs */, sizeof(input_type)),
-                gr::io_signature::make(
-                    1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
+    : gr::sync_block("nav_solution",
+                     gr::io_signature::make(
+                         1 /* min inputs */, 8 /* max inputs */, sizeof(input_type)),
+                     gr::io_signature::make(
+                         1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
 {
     channels.assign(8, Ephemeris());
     message_port_register_in(pmt::string_to_symbol("ephemeris"));
@@ -45,57 +45,26 @@ nav_solution_impl::nav_solution_impl()
  */
 nav_solution_impl::~nav_solution_impl() {}
 
-void nav_solution_impl::forecast(int noutput_items, gr_vector_int& ninput_items_required)
-{
-    // #pragma message( \
-//     "implement a forecast that fills in how many items on each input you need to produce noutput_items and remove this warning")
-    /* <+forecast+> e.g. ninput_items_required[0] = noutput_items */
-}
-
-int nav_solution_impl::general_work(int noutput_items,
-                                    gr_vector_int& ninput_items,
-                                    gr_vector_const_void_star& input_items,
-                                    gr_vector_void_star& output_items)
+int nav_solution_impl::work(int noutput_items,
+                            gr_vector_const_void_star& input_items,
+                            gr_vector_void_star& output_items)
 {
     const input_type* in = reinterpret_cast<const input_type*>(input_items[0]);
     output_type* out = reinterpret_cast<output_type*>(output_items[0]);
 
-    // if (test < 10) {
-    //     test++;
-    //     std::cout << "ninput_items: " << input_items.size() << std::endl;
-    // }
+    for (int i = 0; i < noutput_items; i++) {
+        pseudoRanges = getPseudoRanges(input_items, i, startOffset, c);
 
-    if (initDelay > 0) {
-        initDelay -= noutput_items;
-    }
-
-
-    // Do <+signal processing+>
-    for (int i = 0; i < ninput_items[0]; i++) {
-
-        if (initDelay < 0 && i == (noutput_items + initDelay - 1)) {
-            initDelay = 0;
+        std::cout << "PSEUDO RANGES" << std::endl;
+        for (auto range : pseudoRanges) {
+            std::cout << range << ",  ";
         }
+        std::cout << std::endl;
 
-        if (initDelay == 0 && iterator % 500 == 0) {
-            pseudoRanges = getPseudoRanges(input_items, i, startOffset, c);
-            if (test < 50) {
-                std::cout << "PSEUDO RANGES" << std::endl;
-                for (auto range : pseudoRanges) {
-                    std::cout << range << ",  ";
-                }
-                std::cout << std::endl;
-            }
-            test++;
-        }
 
         out[i] = in[i];
         iterator++;
     }
-
-    // Tell runtime system how many input items we consumed on
-    // each input stream.
-    consume_each(noutput_items);
 
     // Tell runtime system how many output items we produced.
     return noutput_items;

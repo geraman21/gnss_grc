@@ -10,14 +10,13 @@
 # Setup library
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
-
 list(APPEND gnss_sources
     tracking_ff_impl.cc
     generate_l1_ca.cc
     helper-functions.cc
     ephemeris.cc
     channel.cc
-    decoding_test_impl.cc
+    nav_decoding_impl.cc
     nav_solution_impl.cc
 )
 

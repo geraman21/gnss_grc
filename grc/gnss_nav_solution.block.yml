@@ -28,28 +28,28 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
-- label: Data ch-1
+- label: Channel 0
   dtype: float
   optional: true
-- label: Data ch-2
+- label: Channel 1
   dtype: float
   optional: true
-- label: Data ch-3
+- label: Channel 2
   dtype: float
   optional: true
-- label: Data ch-4
+- label: Channel 3
   dtype: float
   optional: true
-- label: Data ch-5
+- label: Channel 4
   dtype: float
   optional: true
-- label: Data ch-6
+- label: Channel 5
   dtype: float
   optional: true
-- label: Data ch-7
+- label: Channel 6
   dtype: float
   optional: true
-- label: Data ch-8
+- label: Channel 7
   dtype: float
   optional: true
 - domain: message

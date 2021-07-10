@@ -27,10 +27,9 @@ include(GrPybind)
 ########################################################################
 # Python Bindings
 ########################################################################
-
 list(APPEND gnss_python_files
     tracking_ff_python.cc
-    decoding_test_python.cc
+    nav_decoding_python.cc
     nav_solution_python.cc python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(gnss 
