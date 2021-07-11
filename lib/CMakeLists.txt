@@ -15,6 +15,8 @@ list(APPEND gnss_sources
     generate_l1_ca.cc
     helper-functions.cc
     ephemeris.cc
+    geo-functions.cc
+    sat-position.cc
     channel.cc
     nav_decoding_impl.cc
     nav_solution_impl.cc

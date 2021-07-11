@@ -7,6 +7,7 @@
 
 void Ephemeris::printEphemeris()
 {
+    std::cout << "channelNumber : " << channelNumber << std::endl;
     std::cout << "weekNumber : " << weekNumber << std::endl;
     std::cout << "accuracy : " << accuracy << std::endl;
     std::cout << "health : " << health << std::endl;
@@ -38,21 +39,25 @@ void Ephemeris::printEphemeris()
     std::cout << "iDot : " << iDot << std::endl;
 }
 
-Ephemeris::Ephemeris(std::vector<int>& navBits, int channel)
+Ephemeris::Ephemeris(std::vector<int> &navBits, int channel)
 {
     channelNumber = channel;
     int D30Star = navBits.at(0);
     navBits.erase(navBits.begin());
 
-    for (int i = 1; i <= 5; i++) {
+    for (int i = 1; i <= 5; i++)
+    {
         std::vector<int> subframe(navBits.begin() + 300 * (i - 1),
                                   navBits.begin() + 300 * i);
 
         // Correct polarity of the data bits in all 10 words
 
-        for (int j = 1; j <= 10; j++) {
-            if (D30Star == 1) {
-                for (int a = 0; a < 24; a++) {
+        for (int j = 1; j <= 10; j++)
+        {
+            if (D30Star == 1)
+            {
+                for (int a = 0; a < 24; a++)
+                {
                     subframe.at(30 * (j - 1) + a) == 0
                         ? subframe.at(30 * (j - 1) + a) = 1
                         : subframe.at(30 * (j - 1) + a) = 0;
@@ -62,9 +67,13 @@ Ephemeris::Ephemeris(std::vector<int>& navBits, int channel)
         }
 
         int subframeID = bin2dec(vecSelector(subframe, 50, 52));
+        if (i == 5)
+        {
+            TOW = bin2dec(vecSelector(subframe, 31, 47)) * 6 - 30;
+        }
 
-
-        switch (subframeID) {
+        switch (subframeID)
+        {
         case 1:
             weekNumber = bin2dec(std::vector<int>(subframe.begin() + 61 - 1,
                                                   subframe.begin() + 70)) +
@@ -72,9 +81,9 @@ Ephemeris::Ephemeris(std::vector<int>& navBits, int channel)
             accuracy = bin2dec(vecSelector(subframe, 73, 76));
 
             for (auto i :
-                 std::vector<int>(subframe.begin() + 73 - 1, subframe.begin() + 76)) {
+                 std::vector<int>(subframe.begin() + 73 - 1, subframe.begin() + 76))
+            {
             };
-
 
             health = bin2dec(vecSelector(subframe, 77, 82));
             T_GD = twosComp2dec(vecSelector(subframe, 197, 204)) * pow(2, -31);
@@ -116,8 +125,6 @@ Ephemeris::Ephemeris(std::vector<int>& navBits, int channel)
         default:
             break;
         }
-
-        TOW = bin2dec(vecSelector(subframe, 37, 47)) * 60 - 30;
     }
 }
 Ephemeris::Ephemeris() {}

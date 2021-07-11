@@ -6,8 +6,8 @@
 #include <iostream>
 #include <vector>
 
-void calcloopCoef(float& coeff1,
-                  float& coeff2,
+void calcloopCoef(float &coeff1,
+                  float &coeff2,
                   short loopNoiseBandwidth,
                   float zeta,
                   float loopGain,
@@ -34,17 +34,20 @@ std::vector<float> linspace(float start_in, float end_in, int num_in)
 
     std::vector<float> linspaced;
 
-    if (num_in == 0) {
+    if (num_in == 0)
+    {
         return linspaced;
     }
-    if (num_in == 1) {
+    if (num_in == 1)
+    {
         linspaced.push_back(start_in);
         return linspaced;
     }
 
     float delta = (end_in - start_in) / (num_in - 1);
 
-    for (int i = 0; i < num_in - 1; ++i) {
+    for (int i = 0; i < num_in - 1; ++i)
+    {
         linspaced.push_back(start_in + delta * i);
     }
 
@@ -61,20 +64,22 @@ std::vector<float> linspace(float start_in, float end_in, int num_in)
 // performs straight convolution by Clay S. Turner
 // for correlattion just reverse the order of sequence y;
 
-void convolve(std::vector<int>* result, int* x, int* y, int lenx, int leny)
+void convolve(std::vector<int> *result, int *x, int *y, int lenx, int leny)
 {
     int s, *xp, *yp;
     int lenz;
     int i, n, n_lo, n_hi;
 
     lenz = lenx + leny - 1;
-    for (i = 0; i < lenz; i++) {
+    for (i = 0; i < lenz; i++)
+    {
         s = 0.0;
         n_lo = 0 > (i - leny + 1) ? 0 : i - leny + 1;
         n_hi = lenx - 1 < i ? lenx - 1 : i;
         xp = x + n_lo;
         yp = y + i - n_lo;
-        for (n = n_lo; n <= n_hi; n++) {
+        for (n = n_lo; n <= n_hi; n++)
+        {
             s += *xp * *yp;
             xp++;
             yp--;
@@ -83,7 +88,7 @@ void convolve(std::vector<int>* result, int* x, int* y, int lenx, int leny)
     }
 }
 
-void convolve(std::vector<int>* result, std::deque<int>& x, int* y, int lenx, int leny)
+void convolve(std::vector<int> *result, std::deque<int> &x, int *y, int lenx, int leny)
 {
     int s, xp, *yp;
     int lenz;
@@ -91,13 +96,15 @@ void convolve(std::vector<int>* result, std::deque<int>& x, int* y, int lenx, in
 
     lenz = lenx + leny - 1;
 
-    for (i = 0; i < lenz; i++) {
+    for (i = 0; i < lenz; i++)
+    {
         s = 0.0;
         n_lo = 0 > (i - leny + 1) ? 0 : i - leny + 1;
         n_hi = lenx - 1 < i ? lenx - 1 : i;
         xp = x[n_lo];
         yp = y + i - n_lo;
-        for (n = n_lo; n <= n_hi; n++) {
+        for (n = n_lo; n <= n_hi; n++)
+        {
             s += xp * *yp;
             xp = x[n + 1];
             yp--;
@@ -106,16 +113,19 @@ void convolve(std::vector<int>* result, std::deque<int>& x, int* y, int lenx, in
     }
 }
 
-int parityCheck(std::vector<int>& bits, int index)
+int parityCheck(std::vector<int> &bits, int index)
 {
-    if (bits.size() != 33) {
+    if (bits.size() != 33)
+    {
         std::cout << "wrong input: [bits]" << std::endl;
         return 0;
     }
 
     // Check if the data bits must be inverted
-    if (bits.at(2) != 1) {
-        std::for_each(bits.begin() + 3, bits.begin() + 27, [](int& n) { n *= -1; });
+    if (bits.at(2) != 1)
+    {
+        std::for_each(bits.begin() + 3, bits.begin() + 27, [](int &n)
+                      { n *= -1; });
     }
 
     //  -- Calculate 6 parity bits ----------------------------------------------
@@ -158,7 +168,7 @@ int parityCheck(std::vector<int>& bits, int index)
         return 0;
 }
 
-int findSubframeStart(std::deque<int>& buffer)
+int findSubframeStart(std::deque<int> &buffer)
 {
     int subframeStart = 0;
     auto corrResult = std::vector<int>(buffer.size() + 159);
@@ -166,33 +176,37 @@ int findSubframeStart(std::deque<int>& buffer)
     // 1, 1, 0, 1, 0, 0, 0, 1 }
 
     int reversePreamble[160]{
-        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1
-    };
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
     std::vector<int> indices;
     convolve(&corrResult, buffer, reversePreamble, buffer.size(), 160);
 
     std::vector<int>::iterator it = corrResult.begin();
 
-    while (it != corrResult.end()) {
+    while (it != corrResult.end())
+    {
         it++;
         it =
-            std::find_if(it, corrResult.end(), [](int a) { return (std::abs(a) > 153); });
+            std::find_if(it, corrResult.end(), [](int a)
+                         { return (std::abs(a) > 153); });
         int dist = std::distance(corrResult.begin(), it);
         indices.push_back(dist - 159);
     }
 
-    for (int i = 0; i < indices.size(); i++) {
-        for (int k = 0; k < i; k++) {
+    for (int i = 0; i < indices.size(); i++)
+    {
+        for (int k = 0; k < i; k++)
+        {
             if (indices.at(i) - indices.at(k) == 6000 && indices.at(k) - 40 >= 0 &&
-                indices.at(k) + 60 * 20 < buffer.size()) {
+                indices.at(k) + 60 * 20 < buffer.size())
+            {
                 // Re-read bit vales for preamble verification ==============
                 // Preamble occurrence is verified by checking the parity of
                 // the first two words in the subframe. Now it is assumed that
@@ -207,12 +221,14 @@ int findSubframeStart(std::deque<int>& buffer)
                 // better indexing
                 int index = indices.at(k);
                 std::vector<int> bits;
-                int sum{ 0 };
-                int counter{ 0 };
-                for (int i = index - 40; i < index + 60 * 20; i++) {
+                int sum{0};
+                int counter{0};
+                for (int i = index - 40; i < index + 60 * 20; i++)
+                {
                     sum += buffer.at(i);
                     counter++;
-                    if (counter == 20) {
+                    if (counter == 20)
+                    {
                         if (sum > 0)
                             bits.push_back(1);
                         else
@@ -233,7 +249,8 @@ int findSubframeStart(std::deque<int>& buffer)
                 // std::cout << "parity low: " << parity1 << std::endl;
                 // std::cout << "parity high: " << parity2 << std::endl;
 
-                if (parity1 != 0 && parity2 != 0) {
+                if (parity1 != 0 && parity2 != 0)
+                {
                     subframeStart = index;
                     goto endloop;
                 }
@@ -244,12 +261,12 @@ endloop:
     return subframeStart;
 }
 
-
-int bin2dec(std::vector<int> vec)
+unsigned int bin2dec(std::vector<int> vec)
 {
-    int decimal = 0;
+    unsigned int decimal = 0;
 
-    for (int i = 0; i < vec.size(); i++) {
+    for (int i = 0; i < vec.size(); i++)
+    {
         decimal = decimal * 2 + vec.at(i);
     }
     return decimal;
@@ -257,14 +274,17 @@ int bin2dec(std::vector<int> vec)
 
 int twosComp2dec(std::vector<int> vec)
 {
-    if (vec.front() == 1) {
-        std::for_each(vec.begin(), vec.end(), [](int& a) { a == 0 ? a = 1 : a = 0; });
+    if (vec.front() == 1)
+    {
+        std::for_each(vec.begin(), vec.end(), [](int &a)
+                      { a == 0 ? a = 1 : a = 0; });
         return -(bin2dec(vec) + 1);
-    } else
+    }
+    else
         return bin2dec(vec);
 }
 
-std::vector<int> vecSelector(std::vector<int>& source, int start, int end)
+std::vector<int> vecSelector(std::vector<int> &source, int start, int end)
 {
     if (start < 0 || start >= end || end > source.size())
         return std::vector<int>(1, -1);
@@ -272,7 +292,7 @@ std::vector<int> vecSelector(std::vector<int>& source, int start, int end)
 }
 
 std::vector<int>
-vecSelector(std::vector<int>& source, int start, int end, int start1, int end1)
+vecSelector(std::vector<int> &source, int start, int end, int start1, int end1)
 {
     if (start < 0 || start >= end || end > source.size() || start1 < 0 ||
         start1 >= end1 || end1 > source.size())
@@ -284,20 +304,24 @@ vecSelector(std::vector<int>& source, int start, int end, int start1, int end1)
 }
 
 std::vector<float>
-getPseudoRanges(std::vector<const void*>& data, int index, float startOffset, float c)
+getPseudoRanges(std::vector<const void *> &data, int index, float startOffset, float c)
 {
     std::vector<float> pseudoRanges(data.size());
-    for (int i = 0; i < data.size(); i++) {
-        const float* in = reinterpret_cast<const float*>(data[i]);
+    for (int i = 0; i < data.size(); i++)
+    {
+        const float *in = reinterpret_cast<const float *>(data[i]);
         pseudoRanges.at(i) = in[index];
     }
 
     int minimum = floor(*std::min_element(pseudoRanges.begin(), pseudoRanges.end()));
     // std::cout << "minimum: " << minimum << std::endl;
-    std::for_each(
-        pseudoRanges.begin(), pseudoRanges.end(), [minimum, startOffset, c](float a) {
-            a = (a - minimum + startOffset) * c / 1000;
-        });
+    std::transform(pseudoRanges.begin(),
+                   pseudoRanges.end(),
+                   pseudoRanges.begin(),
+                   [minimum, startOffset, c](float a)
+                   {
+                       return a == 0 ? 0 : ((a - minimum + startOffset) * c / 1000);
+                   });
 
     return pseudoRanges;
 }
