@@ -23,7 +23,7 @@ public:
     double satClkCorr;
 
     SatPosition();
-    SatPosition(int transmitTime, Ephemeris eph);
+    SatPosition(double transmitTime, Ephemeris eph);
 };
 
 #endif /* INCLUDED_GNSS_TRACKING_FF_IMPL_H */

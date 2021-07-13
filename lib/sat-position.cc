@@ -3,7 +3,7 @@
 #include <cmath>
 // #include <math.h>
 
-SatPosition::SatPosition(int transmitTime, Ephemeris eph)
+SatPosition::SatPosition(double transmitTime, Ephemeris eph)
 {
     double gpsPi = 3.1415926535898;
     double Omegae_dot = 7.2921151467e-5; // Earth rotation rate, [rad/s]
@@ -19,7 +19,6 @@ SatPosition::SatPosition(int transmitTime, Ephemeris eph)
         // std::cout << "dt:  " << dt << std::endl;
         // Calculate clock correction
         satClkCorr = (eph.a_f2 * dt + eph.a_f1) * dt + eph.a_f0 - eph.T_GD;
-        // std::cout << "satClkCorr: " << satClkCorr << std::endl;
         double time = transmitTime - satClkCorr;
 
         // Find Satellites position
@@ -80,7 +79,7 @@ SatPosition::SatPosition(int transmitTime, Ephemeris eph)
 
         // --- Compute satellite coordinates ------------------------------------
         pos1 = cos(u) * r * cos(Omega) - sin(u) * r * cos(i) * sin(Omega);
-        pos2 = cos(u) * r * sin(Omega) - sin(u) * r * cos(i) * cos(Omega);
+        pos2 = cos(u) * r * sin(Omega) + sin(u) * r * cos(i) * cos(Omega);
         pos3 = sin(u) * r * sin(i);
 
         satClkCorr = (eph.a_f2 * dt + eph.a_f1) * dt + eph.a_f0 - eph.T_GD + dtr;

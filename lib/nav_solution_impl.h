@@ -26,7 +26,7 @@ namespace gr
             nav_solution_impl();
             ~nav_solution_impl();
             std::vector<Ephemeris> channels;
-            int transmitTime = 0;
+            bool startNavigation = false;
             int test = 0;
             unsigned int iterator = 0;
             int initDelay = 250;

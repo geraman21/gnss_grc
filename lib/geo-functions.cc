@@ -1,11 +1,11 @@
-int check_t(int time)
+double check_t(double time)
 {
-    int corrTime = time;
+    double corrTime = time;
     int half_weeK = 302400;
     if (time > half_weeK)
-        corrTime = time - 2 * half_weeK;
+        corrTime = time - (2 * half_weeK);
     else if (time < -half_weeK)
-        corrTime = time + 2 * half_weeK;
+        corrTime = time + (2 * half_weeK);
 
     return corrTime;
 }

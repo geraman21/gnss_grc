@@ -58,19 +58,22 @@ namespace gr
 
             for (int i = 0; i < noutput_items; i++)
             {
-                pseudoRanges = getPseudoRanges(input_items, i, startOffset, c);
-                std::vector<SatPosition> satPositions(input_items.size());
-                for (int i = 0; i < input_items.size(); i++)
+                if (!startNavigation && in[i] != 0)
+                    startNavigation = true;
+                if (startNavigation)
                 {
-                    satPositions.at(i) = SatPosition(channels.at(i).TOW, channels.at(i));
-                    if (satPositions.at(i).isActive)
-                    {
-                        std::cout << satPositions.at(i).pos1 << "   " << satPositions.at(i).pos2 << "     " << satPositions.at(i).pos3 << std::endl;
-                    }
-                }
 
+                    pseudoRanges = getPseudoRanges(input_items, i, startOffset, c);
+                    // std::cout << pseudoRanges.at(0) << "   " << pseudoRanges.at(1) << "     " << pseudoRanges.at(2) << std::endl;
+
+                    std::vector<SatPosition> satPositions(input_items.size());
+                    for (int i = 0; i < input_items.size(); i++)
+                    {
+                        satPositions.at(i) = SatPosition(channels.at(i).TOW + iterator * 0.5, channels.at(i));
+                    }
+                    iterator++;
+                }
                 out[i] = in[i];
-                iterator++;
             }
 
             // Tell runtime system how many output items we produced.

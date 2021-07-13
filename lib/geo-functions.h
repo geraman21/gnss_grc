@@ -1,1 +1,1 @@
-int check_t(int time);
+double check_t(double time);
