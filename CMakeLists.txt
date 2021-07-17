@@ -75,6 +75,7 @@ ENDIF()
 ########################################################################
 include(FindPkgConfig)
 find_package(Gnuradio "3.9" REQUIRED)
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 include(GrVersion)
 
 include(GrPlatform) #define LIB_SUFFIX

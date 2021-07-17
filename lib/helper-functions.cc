@@ -304,7 +304,7 @@ vecSelector(std::vector<int> &source, int start, int end, int start1, int end1)
 }
 
 std::vector<float>
-getPseudoRanges(std::vector<const void *> &data, int index, float startOffset, float c)
+getPseudoRanges(std::vector<const void *> &data, int index, float startOffset, long int c)
 {
     std::vector<float> pseudoRanges(data.size());
     for (int i = 0; i < data.size(); i++)
@@ -325,3 +325,43 @@ getPseudoRanges(std::vector<const void *> &data, int index, float startOffset, f
 
     return pseudoRanges;
 }
+
+// std::vector<std::vector<double>> multiplyMatrices(std::vector<std::vector<double>> firstMatrix, std::vector<std::vector<double>> secondMatrix)
+// {
+
+//     int i, j, k;
+//     int rowFirst = firstMatrix.size();
+//     int columnFirst = firstMatrix[0].size();
+//     int rowSecond = secondMatrix.size();
+//     int columnSecond = secondMatrix[0].size();
+//     if (columnFirst != rowSecond)
+//     {
+//         std::cout << "Number of columns in the first matrix should be equal to number of rows in the second matrix" << std::endl;
+//         return;
+//     }
+
+//     std::vector<std::vector<double>>
+//         mult(rowFirst, std::vector<double>(columnSecond));
+
+//     // Initializing elements of matrix mult to 0.
+//     for (i = 0; i < rowFirst; ++i)
+//     {
+//         for (j = 0; j < columnSecond; ++j)
+//         {
+//             mult[i][j] = 0;
+//         }
+//     }
+
+//     // Multiplying matrix firstMatrix and secondMatrix and storing in vector mult.
+//     for (i = 0; i < rowFirst; ++i)
+//     {
+//         for (j = 0; j < columnSecond; ++j)
+//         {
+//             for (k = 0; k < columnFirst; ++k)
+//             {
+//                 mult[i][j] += firstMatrix[i][k] * secondMatrix[k][j];
+//             }
+//         }
+//     }
+//     return mult;
+// }

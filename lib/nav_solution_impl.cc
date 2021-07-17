@@ -33,14 +33,14 @@ namespace gr
                              gr::io_signature::make(
                                  1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)))
         {
-            channels.assign(8, Ephemeris());
+            ephemerides.assign(8, Ephemeris());
             message_port_register_in(pmt::string_to_symbol("ephemeris"));
             set_msg_handler(pmt::mp("ephemeris"), [this](const pmt::pmt_t &msg)
                             {
                                 Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
                                 // data_object.printEphemeris();
                                 // std::cout << "===================" << std::endl;
-                                channels.at(data_object.channelNumber) = data_object;
+                                ephemerides.at(data_object.channelNumber) = data_object;
                             });
         }
 
@@ -69,8 +69,9 @@ namespace gr
                     std::vector<SatPosition> satPositions(input_items.size());
                     for (int i = 0; i < input_items.size(); i++)
                     {
-                        satPositions.at(i) = SatPosition(channels.at(i).TOW + iterator * 0.5, channels.at(i));
+                        satPositions.at(i) = SatPosition(ephemerides.at(i).TOW + iterator * 0.5, ephemerides.at(i));
                     }
+
                     iterator++;
                 }
                 out[i] = in[i];

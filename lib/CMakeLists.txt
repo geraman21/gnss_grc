@@ -30,6 +30,7 @@ endif(NOT gnss_sources)
 
 add_library(gnuradio-gnss SHARED ${gnss_sources})
 target_link_libraries(gnuradio-gnss gnuradio::gnuradio-runtime)
+target_link_libraries(gnuradio-gnss Eigen3::Eigen)
 target_include_directories(gnuradio-gnss
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>

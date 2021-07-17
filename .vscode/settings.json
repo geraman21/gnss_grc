@@ -69,7 +69,9 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "codecvt": "cpp"
+        "codecvt": "cpp",
+        "dense": "cpp",
+        "geometry": "cpp"
     },
     "cmake.configureOnOpen": true
 }

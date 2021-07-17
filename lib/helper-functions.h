@@ -28,3 +28,4 @@ vecSelector(std::vector<int> &source, int start, int end, int start1, int end1);
 void printEphemeris(Ephemeris *ephResults);
 std::vector<float>
 getPseudoRanges(std::vector<const void *> &data, int index, float startOffset, float c);
+std::vector<std::vector<double>> multiplyMatrices(std::vector<std::vector<double>> firstMatrix, std::vector<std::vector<double>> secondMatrix);
