@@ -33,7 +33,7 @@ void bind_nav_decoding(py::module& m)
     using nav_decoding    = gr::gnss::nav_decoding;
 
 
-    py::class_<nav_decoding, gr::sync_decimator,
+    py::class_<nav_decoding, gr::block, gr::basic_block, gr::sync_decimator,
         std::shared_ptr<nav_decoding>>(m, "nav_decoding", D(nav_decoding))
 
         .def(py::init(&nav_decoding::make),

@@ -103,7 +103,7 @@ int tracking_ff_impl::work(int noutput_items,
 
             float carrSin;
             float carrCos;
-            sincosf(trigArg, &carrSin, &carrCos);
+            __sincosf(trigArg, &carrSin, &carrCos);
             float qSignal = in[i] * carrCos;
             float iSignal = in[i] * carrSin;
 
