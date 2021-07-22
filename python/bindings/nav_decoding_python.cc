@@ -27,33 +27,16 @@ namespace py = pybind11;
 // pydoc.h is automatically generated in the build directory
 #include <nav_decoding_pydoc.h>
 
-void bind_nav_decoding(py::module& m)
+void bind_nav_decoding(py::module &m)
 {
 
-    using nav_decoding    = gr::gnss::nav_decoding;
+    using nav_decoding = gr::gnss::nav_decoding;
 
-
-    py::class_<nav_decoding, gr::block, gr::basic_block, gr::sync_decimator,
-        std::shared_ptr<nav_decoding>>(m, "nav_decoding", D(nav_decoding))
+    py::class_<nav_decoding, gr::sync_decimator,
+               std::shared_ptr<nav_decoding>>(m, "nav_decoding", D(nav_decoding))
 
         .def(py::init(&nav_decoding::make),
-           D(nav_decoding,make)
-        )
-        
-
-
+             D(nav_decoding, make))
 
         ;
-
-
-
-
 }
-
-
-
-
-
-
-
-

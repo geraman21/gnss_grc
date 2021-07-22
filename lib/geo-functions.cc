@@ -123,6 +123,8 @@ tuple<double, double, double> togeod(double a, double finv, double X, double Y, 
             cout << "Problem in TOGEOD, did not converge" << endl;
         }
     }
+
+    return {dphi, dlambda, h};
 }
 
 tuple<double, double, double> topocent(Vector3d X, Vector3d dx)
@@ -143,9 +145,43 @@ tuple<double, double, double> topocent(Vector3d X, Vector3d dx)
     //        El          - elevation angle, degrees
 
     float dtr = M_PI / 180;
+    double Az, El, D;
+    auto [phi, lambda, h] = togeod(6378137, 298.257223563, X(0), X(1), X(2));
+
+    double cl = cos(lambda * dtr);
+    double sl = sin(lambda * dtr);
+    double cb = cos(phi * dtr);
+    double sb = sin(phi * dtr);
+
+    Matrix3d F;
+    F << -sl, -sb * cl, cb * cl,
+        cl, -sb * sl, cb * sl,
+        0, cb, sb;
+
+    MatrixXd local_vector;
+    local_vector = F.adjoint() * dx;
+    double E = local_vector(0);
+    double N = local_vector(1);
+    double U = local_vector(2);
+
+    double hor_dis = sqrt(pow(E, 2) + pow(N, 2));
+
+    if (hor_dis < 1.e-20)
+    {
+        Az = 0;
+        El = 90;
+    }
+    else
+    {
+        Az = atan2(E, N) / dtr;
+        El = atan2(U, hor_dis) / dtr;
+    }
+    D = sqrt(pow(dx(0), 2)) + sqrt(pow(dx(1), 2)) + sqrt(pow(dx(2), 2));
+
+    return {Az, El, D};
 }
 
-tuple<vector<double>, vector<double>, vector<double>, vector<double>> leastSquarePos(vector<SatPosition> satpos, vector<float> obs, long int c)
+tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(vector<SatPosition> satpos, vector<float> obs, long int c)
 {
 
     float dtr = M_PI / 180;
@@ -162,7 +198,6 @@ tuple<vector<double>, vector<double>, vector<double>, vector<double>> leastSquar
     vector<double> az(nmbOfSatellites, 0);
     vector<double> dop(5, 0);
 
-    vector<vector<double>> A(nmbOfSatellites, vector<double>(4));
     VectorXd omc(nmbOfSatellites);
 
     for (int iter = 0; iter < nmbOfIterations; iter++)
@@ -184,7 +219,7 @@ tuple<vector<double>, vector<double>, vector<double>, vector<double>> leastSquar
                 // Correct satellite position (do to earth rotation)
                 Rot_X = e_r_corr(travelTime, X);
 
-                auto [azi, eli, dist] = topocent(pos, Rot_X - pos);
+                auto [azi, eli, dist] = topocent(pos.head(3), Rot_X - pos.head(3));
                 az.at(i) = azi;
                 el.at(i) = eli;
                 omc(i) = obs.at(i) - (Rot_X - pos.head(3)).norm() - pos(4);
@@ -202,10 +237,12 @@ tuple<vector<double>, vector<double>, vector<double>, vector<double>> leastSquar
         pos = pos + x;
     }
     //     Q       = inv(A'*A);
-    MatrixXd Q = (A.transpose() * A).inverse();
+    MatrixXd Q = (A.adjoint() * A).inverse();
     dop.at(0) = sqrt(Q.trace());
     dop.at(1) = sqrt(Q(0, 0) + Q(1, 1) + Q(2, 2));
     dop.at(2) = sqrt(Q(0, 0) + Q(1, 1));
     dop.at(3) = sqrt(Q(2, 2));
     dop.at(4) = sqrt(Q(3, 3));
+
+    return {pos, el, az, dop};
 }

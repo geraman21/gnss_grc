@@ -10,6 +10,7 @@
 #include "nav_solution_impl.h"
 #include <gnuradio/io_signature.h>
 #include "sat-position.h"
+#include "geo-functions.h"
 
 namespace gr
 {
@@ -70,7 +71,37 @@ namespace gr
                     for (int i = 0; i < input_items.size(); i++)
                     {
                         satPositions.at(i) = SatPosition(ephemerides.at(i).TOW + iterator * 0.5, ephemerides.at(i));
+                        pseudoRanges.at(i) = satPositions.at(i).satClkCorr * c;
                     }
+
+                    auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
+
+                    std::cout << "xyzdt: " << xyzdt << std::endl
+                              << std::endl;
+                    std::cout << "El: [ ";
+                    for (auto i : el)
+                    {
+                        std::cout << i << ", ";
+                    }
+                    std::cout << "]" << std::endl;
+
+                    std::cout << "Az: [ ";
+                    for (auto i : el)
+                    {
+                        std::cout << i << ", ";
+                    }
+                    std::cout << "]" << std::endl;
+
+                    std::cout << "DOP: [ ";
+                    for (auto i : DOP)
+                    {
+                        std::cout << i << ", ";
+                    }
+                    std::cout << "]" << std::endl;
+
+                    std::cout << std::endl
+                              << "========================================" << std::endl
+                              << std::endl;
 
                     iterator++;
                 }
