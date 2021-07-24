@@ -19,6 +19,7 @@ SatPosition::SatPosition(double transmitTime, Ephemeris eph)
         // std::cout << "dt:  " << dt << std::endl;
         // Calculate clock correction
         satClkCorr = (eph.a_f2 * dt + eph.a_f1) * dt + eph.a_f0 - eph.T_GD;
+
         double time = transmitTime - satClkCorr;
 
         // Find Satellites position
@@ -57,7 +58,6 @@ SatPosition::SatPosition(double transmitTime, Ephemeris eph)
 
         // Compute relativistic correction term
         double dtr = F * eph.e * eph.sqrtA * sin(E);
-
         // Calculate the true anomaly
         double nu = atan2(sqrt(1 - pow(eph.e, 2)) * sin(E), cos(E) - eph.e);
 

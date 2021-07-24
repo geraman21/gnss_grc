@@ -123,6 +123,7 @@ tuple<double, double, double> togeod(double a, double finv, double X, double Y, 
             cout << "Problem in TOGEOD, did not converge" << endl;
         }
     }
+    dphi = dphi * rtd;
 
     return {dphi, dlambda, h};
 }
@@ -176,7 +177,9 @@ tuple<double, double, double> topocent(Vector3d X, Vector3d dx)
         Az = atan2(E, N) / dtr;
         El = atan2(U, hor_dis) / dtr;
     }
-    D = sqrt(pow(dx(0), 2)) + sqrt(pow(dx(1), 2)) + sqrt(pow(dx(2), 2));
+    Az < 0 ? Az += 360 : true;
+
+    D = sqrt(pow(dx(0), 2) + pow(dx(1), 2) + pow(dx(2), 2));
 
     return {Az, El, D};
 }
@@ -200,12 +203,25 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
 
     VectorXd omc(nmbOfSatellites);
 
+    MatrixXd mat(3, 3);
+    mat << -0.0323738, 0.987109, -0.800398, 1, 0.852054, 0.566346, -0.628522, 1, 0.509924, 0.492493, -1.01303, 1;
+
+    Vector3d sol;
+    sol << -5.63166e6, -4.45273e6, -5.04558e6;
+
+    MatrixXd x;
+    x = mat.bdcSvd(ComputeThinU | ComputeThinV).solve(sol);
+    cout << "++++++++++++" << endl;
+    cout << x << endl;
+    cout << "++++++++++++" << endl;
+
     for (int iter = 0; iter < nmbOfIterations; iter++)
     {
         for (int i = 0; i < nmbOfSatellites; i++)
         {
             Vector3d X;
             X << satpos.at(i).pos1, satpos.at(i).pos2, satpos.at(i).pos3;
+
             if (iter == 0)
             {
                 trop = 2;
@@ -214,22 +230,29 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
             else
             {
                 double rho2 = pow((X(0) - pos(0)), 2) + pow(X(1) - pos(1), 2) + pow(X(2) - pos(2), 2);
-                double travelTime = sqrt(rho2) / c;
 
+                // cout << X(0) << "  " << X(1) << "  " << X(2) << "  ";
+                double travelTime = sqrt(rho2) / c;
+                // cout << "travelTime: " << travelTime << "  ";
                 // Correct satellite position (do to earth rotation)
                 Rot_X = e_r_corr(travelTime, X);
 
                 auto [azi, eli, dist] = topocent(pos.head(3), Rot_X - pos.head(3));
                 az.at(i) = azi;
                 el.at(i) = eli;
-                omc(i) = obs.at(i) - (Rot_X - pos.head(3)).norm() - pos(4);
-
-                A.row(i) << (-(Rot_X(0) - pos(0))) / obs.at(i),
-                    (-(Rot_X(1) - pos(1))) / obs.at(i),
-                    (-(Rot_X(2) - pos(2))) / obs.at(i),
-                    1;
+                // if (i == 0)
+                //     cout << pos.head(3) << endl;
             }
+            // cout << azi << "   " << eli << "   " << dist;
+            omc(i) = obs.at(i) - (Rot_X - pos.head(3)).norm() - pos(4);
+
+            A.row(i) << (-(Rot_X(0) - pos(0))) / obs.at(i),
+                (-(Rot_X(1) - pos(1))) / obs.at(i),
+                (-(Rot_X(2) - pos(2))) / obs.at(i),
+                1;
         }
+        // cout << A << endl;
+        std::cout << "============" << endl;
         // Solve Ax = b. Result stored in x. Matlab: x = A \ b.
         // x = A.lu()  .solve(b));
         MatrixXd x;

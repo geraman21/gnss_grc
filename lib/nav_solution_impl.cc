@@ -54,58 +54,67 @@ namespace gr
                                     gr_vector_const_void_star &input_items,
                                     gr_vector_void_star &output_items)
         {
-            const input_type *in = reinterpret_cast<const input_type *>(input_items[0]);
+            const input_type *in0 = reinterpret_cast<const input_type *>(input_items[0]);
+            const input_type *in1 = reinterpret_cast<const input_type *>(input_items[1]);
+            const input_type *in2 = reinterpret_cast<const input_type *>(input_items[2]);
             output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
             for (int i = 0; i < noutput_items; i++)
             {
-                if (!startNavigation && in[i] != 0)
+                if (!startNavigation && in0[i] != 0 && in1[i] != 0 && in2[i] != 0)
                     startNavigation = true;
-                if (startNavigation)
+                if (in0[i] != 0 && in1[i] != 0 && in2[i] != 0)
                 {
 
                     pseudoRanges = getPseudoRanges(input_items, i, startOffset, c);
                     // std::cout << pseudoRanges.at(0) << "   " << pseudoRanges.at(1) << "     " << pseudoRanges.at(2) << std::endl;
 
                     std::vector<SatPosition> satPositions(input_items.size());
+                    bool startNavCalculations = true;
                     for (int i = 0; i < input_items.size(); i++)
                     {
                         satPositions.at(i) = SatPosition(ephemerides.at(i).TOW + iterator * 0.5, ephemerides.at(i));
-                        pseudoRanges.at(i) = satPositions.at(i).satClkCorr * c;
+                        pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
+                        if (!satPositions.at(i).isActive)
+                        {
+                            startNavCalculations = false;
+                        }
+                        // else
+                        //     std::cout << satPositions.at(i).pos1 << "  " << satPositions.at(i).pos2 << "  " << satPositions.at(i).pos3 << std::endl;
                     }
+                    if (startNavCalculations)
+                        auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
 
-                    auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
+                    // std::cout << "xyzdt: " << xyzdt << std::endl
+                    //           << std::endl;
+                    // std::cout << "El: [ ";
+                    // for (auto i : el)
+                    // {
+                    //     std::cout << i << ", ";
+                    // }
+                    // std::cout << "]" << std::endl;
 
-                    std::cout << "xyzdt: " << xyzdt << std::endl
-                              << std::endl;
-                    std::cout << "El: [ ";
-                    for (auto i : el)
-                    {
-                        std::cout << i << ", ";
-                    }
-                    std::cout << "]" << std::endl;
+                    // std::cout << "Az: [ ";
+                    // for (auto i : el)
+                    // {
+                    //     std::cout << i << ", ";
+                    // }
+                    // std::cout << "]" << std::endl;
 
-                    std::cout << "Az: [ ";
-                    for (auto i : el)
-                    {
-                        std::cout << i << ", ";
-                    }
-                    std::cout << "]" << std::endl;
+                    // std::cout << "DOP: [ ";
+                    // for (auto i : DOP)
+                    // {
+                    //     std::cout << i << ", ";
+                    // }
+                    // std::cout << "]" << std::endl;
 
-                    std::cout << "DOP: [ ";
-                    for (auto i : DOP)
-                    {
-                        std::cout << i << ", ";
-                    }
-                    std::cout << "]" << std::endl;
-
-                    std::cout << std::endl
-                              << "========================================" << std::endl
-                              << std::endl;
+                    // std::cout << std::endl
+                    //           << "========================================" << std::endl
+                    //           << std::endl;
 
                     iterator++;
                 }
-                out[i] = in[i];
+                out[i] = in0[i];
             }
 
             // Tell runtime system how many output items we produced.
