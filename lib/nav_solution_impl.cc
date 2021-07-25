@@ -83,35 +83,36 @@ namespace gr
                         //     std::cout << satPositions.at(i).pos1 << "  " << satPositions.at(i).pos2 << "  " << satPositions.at(i).pos3 << std::endl;
                     }
                     if (startNavCalculations)
+                    {
                         auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
 
-                    // std::cout << "xyzdt: " << xyzdt << std::endl
-                    //           << std::endl;
-                    // std::cout << "El: [ ";
-                    // for (auto i : el)
-                    // {
-                    //     std::cout << i << ", ";
-                    // }
-                    // std::cout << "]" << std::endl;
+                        // std::cout << "xyzdt: " << xyzdt << std::endl
+                        //           << std::endl;
+                        // std::cout << "El: [ ";
+                        // for (auto i : el)
+                        // {
+                        //     std::cout << i << ", ";
+                        // }
+                        // std::cout << "]" << std::endl;
 
-                    // std::cout << "Az: [ ";
-                    // for (auto i : el)
-                    // {
-                    //     std::cout << i << ", ";
-                    // }
-                    // std::cout << "]" << std::endl;
+                        // std::cout << "Az: [ ";
+                        // for (auto i : el)
+                        // {
+                        //     std::cout << i << ", ";
+                        // }
+                        // std::cout << "]" << std::endl;
 
-                    // std::cout << "DOP: [ ";
-                    // for (auto i : DOP)
-                    // {
-                    //     std::cout << i << ", ";
-                    // }
-                    // std::cout << "]" << std::endl;
+                        // std::cout << "DOP: [ ";
+                        // for (auto i : DOP)
+                        // {
+                        //     std::cout << i << ", ";
+                        // }
+                        // std::cout << "]" << std::endl;
 
-                    // std::cout << std::endl
-                    //           << "========================================" << std::endl
-                    //           << std::endl;
-
+                        // std::cout << std::endl
+                        //           << "========================================" << std::endl
+                        //           << std::endl;
+                    }
                     iterator++;
                 }
                 out[i] = in0[i];

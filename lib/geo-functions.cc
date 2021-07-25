@@ -20,7 +20,7 @@ double check_t(double time)
     return corrTime;
 }
 
-MatrixXd e_r_corr(double traveltime, MatrixXd X_sat)
+MatrixXd e_r_corr(double traveltime, Vector3d X_sat)
 {
     double Omegae_dot = 7.292115147e-5; // rad/sec
 
@@ -30,10 +30,9 @@ MatrixXd e_r_corr(double traveltime, MatrixXd X_sat)
     R3 << cos(omegatau), sin(omegatau), 0,
         -sin(omegatau), cos(omegatau), 0,
         0, 0, 1;
-    Vector3d pos;
-    pos << X_sat(0, 0), X_sat(1, 0), X_sat(2, 0);
+
     MatrixXd result;
-    result = R3 * pos;
+    result = R3 * X_sat;
 
     return result;
 }
@@ -185,6 +184,7 @@ tuple<double, double, double> topocent(Vector3d X, Vector3d dx)
 }
 
 tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(vector<SatPosition> satpos, vector<float> obs, long int c)
+
 {
 
     float dtr = M_PI / 180;
@@ -203,17 +203,17 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
 
     VectorXd omc(nmbOfSatellites);
 
-    MatrixXd mat(3, 3);
-    mat << -0.0323738, 0.987109, -0.800398, 1, 0.852054, 0.566346, -0.628522, 1, 0.509924, 0.492493, -1.01303, 1;
+    // MatrixXd mat(3, 4);
+    // mat << -0.0323738, 0.987109, -0.800398, 1, 0.852054, 0.566346, -0.628522, 1, 0.509924, 0.492493, -1.01303, 1;
 
-    Vector3d sol;
-    sol << -5.63166e6, -4.45273e6, -5.04558e6;
+    // Vector3d sol;
+    // sol << -5.63166e6, -4.45273e6, -5.04558e6;
 
-    MatrixXd x;
-    x = mat.bdcSvd(ComputeThinU | ComputeThinV).solve(sol);
-    cout << "++++++++++++" << endl;
-    cout << x << endl;
-    cout << "++++++++++++" << endl;
+    // MatrixXd x;
+    // x = mat.colPivHouseholderQr().solve(sol);
+    // cout << "++++++++++++" << endl;
+    // cout << x << endl;
+    // cout << "++++++++++++" << endl;
 
     for (int iter = 0; iter < nmbOfIterations; iter++)
     {
@@ -226,6 +226,7 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
             {
                 trop = 2;
                 Rot_X << satpos.at(i).pos1, satpos.at(i).pos2, satpos.at(i).pos3;
+                // cout << Rot_X.adjoint() << endl;
             }
             else
             {
@@ -236,7 +237,6 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
                 // cout << "travelTime: " << travelTime << "  ";
                 // Correct satellite position (do to earth rotation)
                 Rot_X = e_r_corr(travelTime, X);
-
                 auto [azi, eli, dist] = topocent(pos.head(3), Rot_X - pos.head(3));
                 az.at(i) = azi;
                 el.at(i) = eli;
@@ -251,12 +251,9 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
                 (-(Rot_X(2) - pos(2))) / obs.at(i),
                 1;
         }
-        // cout << A << endl;
         std::cout << "============" << endl;
-        // Solve Ax = b. Result stored in x. Matlab: x = A \ b.
-        // x = A.lu()  .solve(b));
         MatrixXd x;
-        x = A.bdcSvd(ComputeThinU | ComputeThinV).solve(omc);
+        x = A.colPivHouseholderQr().solve(omc);
         pos = pos + x;
     }
     //     Q       = inv(A'*A);
