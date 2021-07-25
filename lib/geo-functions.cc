@@ -252,8 +252,18 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
                 1;
         }
         std::cout << "============" << endl;
+
         MatrixXd x;
         x = A.colPivHouseholderQr().solve(omc);
+        if (iter == 0)
+        {
+            cout << "A ++++++++++++" << endl;
+            cout << A << endl;
+            cout << "OMC ++++++++++" << endl;
+            cout << omc << endl;
+            cout << "x ++++++++++++" << endl;
+            cout << x << endl;
+        }
         pos = pos + x;
     }
     //     Q       = inv(A'*A);
