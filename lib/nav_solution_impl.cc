@@ -85,7 +85,9 @@ namespace gr
                     if (startNavCalculations)
                     {
                         auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
+                        auto [latitude, longitude, height] = cart2geo(xyzdt(0), xyzdt(1), xyzdt(2), 5);
 
+                        cout << "latitude: " << latitude << "  longitude: " << longitude << "  height: " << height << endl;
                         // std::cout << "xyzdt: " << xyzdt << std::endl
                         //           << std::endl;
                         // std::cout << "El: [ ";
@@ -96,7 +98,7 @@ namespace gr
                         // std::cout << "]" << std::endl;
 
                         // std::cout << "Az: [ ";
-                        // for (auto i : el)
+                        // for (auto i : az)
                         // {
                         //     std::cout << i << ", ";
                         // }
