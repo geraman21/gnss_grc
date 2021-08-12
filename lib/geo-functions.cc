@@ -257,7 +257,7 @@ tuple<Vector4d, vector<double>, vector<double>, vector<double>> leastSquarePos(v
     return {pos, el, az, dop};
 }
 
-tuple<double, double, double> cart2geo(double X, double Y, double Z, int i)
+tuple<double, double, double> cart2geo(double X, double Y, double Z, int index)
 {
     // CART2GEO Conversion of Cartesian coordinates (X,Y,Z) to geographical
     // coordinates (phi, lambda, h) on a selected reference ellipsoid.
@@ -278,27 +278,24 @@ tuple<double, double, double> cart2geo(double X, double Y, double Z, int i)
     //  CVS record:
     //  $Id: cart2geo.m,v 1.1.2.3 2007/01/29 15:22:49 dpl Exp $
     // ==========================================================================
-    //     a = [6378388 6378160 6378135 6378137 6378137];
-    // f = [1/297 1/298.247 1/298.26 1/298.257222101 1/298.257223563];
-    // RowVectorXd a(5), f(5);
-    // a << 6378388, 6378160, 6378135, 6378137, 6378137;
-    // f << 1 / 297, 1 / 298.247, 1 / 298.26, 1 / 298.257222101, 1 / 298.257223563;
+    int i = index - 1;
     double a[]{6378388, 6378160, 6378135, 6378137, 6378137};
     double f[]{1 / 297, 1 / 298.247, 1 / 298.26, 1 / 298.257222101, 1 / 298.257223563};
 
     double lambda = atan2(Y, X);
-    double ex2 = (2 - f[i - 1]) * f[i - 1] / (pow((1 - f[i - 1]), 2));
-    double c = a[i - 1] * sqrt(1 + ex2);
-    double phi = atan(Z / ((sqrt(X * X + Y * Y) * (1 - (2 - f[i - 1])) * f[i - 1])));
+    double ex2 = (2 - f[i]) * f[i] / (pow((1 - f[i]), 2));
+    double c = a[i] * sqrt(1 + ex2);
+    double phi = atan(Z / (sqrt(X * X + Y * Y) * (1 - (2 - f[i])) * f[i]));
 
     double h = 0.1;
     double oldh = 0;
+    double N;
     int iterations = 0;
     while (abs(h - oldh) > 1.e-12)
     {
         oldh = h;
-        double N = c / sqrt(1 + ex2 * pow(cos(phi), 2));
-        phi = atan(Z / ((sqrt(X * X + Y * Y) * (1 - (2 - f[i - 1]) * f[i - 1] * N / (N + h)))));
+        N = c / sqrt(1 + ex2 * pow(cos(phi), 2));
+        phi = atan(Z / (sqrt(X * X + Y * Y) * (1 - (2 - f[i]) * f[i] * N / (N + h))));
         h = sqrt(X * X + Y * Y) / cos(phi) - N;
 
         iterations = iterations + 1;

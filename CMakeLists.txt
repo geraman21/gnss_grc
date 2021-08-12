@@ -74,7 +74,7 @@ ENDIF()
 # Install directories
 ########################################################################
 include(FindPkgConfig)
-find_package(Gnuradio "3.9" REQUIRED)
+find_package(Gnuradio "3.9" REQUIRED COMPONENTS fft)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 include(GrVersion)
 
@@ -115,7 +115,6 @@ endif(APPLE)
 # Find gnuradio build dependencies
 ########################################################################
 find_package(Doxygen)
-
 ########################################################################
 # PyBind11 Related
 ########################################################################

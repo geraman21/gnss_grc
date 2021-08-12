@@ -8,5 +8,6 @@
 install(FILES
     gnss_tracking_ff.block.yml
     gnss_nav_decoding.block.yml
-    gnss_nav_solution.block.yml DESTINATION share/gnuradio/grc/blocks
+    gnss_nav_solution.block.yml
+    gnss_acquisition.block.yml DESTINATION share/gnuradio/grc/blocks
 )

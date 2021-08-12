@@ -13,5 +13,6 @@ install(FILES
     api.h
     tracking_ff.h
     nav_decoding.h
-    nav_solution.h DESTINATION include/gnss
+    nav_solution.h
+    acquisition.h DESTINATION include/gnss
 )

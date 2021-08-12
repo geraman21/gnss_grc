@@ -26,7 +26,7 @@ namespace gr
             nav_solution_impl();
             ~nav_solution_impl();
             std::vector<Ephemeris> ephemerides;
-            bool startNavigation = false;
+            bool startNavigation = true;
             int test = 0;
             unsigned int iterator = 0;
             int initDelay = 250;

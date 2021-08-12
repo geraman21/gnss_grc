@@ -11,6 +11,7 @@
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND gnss_sources
+    acqResults.cc
     tracking_ff_impl.cc
     generate_l1_ca.cc
     helper-functions.cc
@@ -20,6 +21,7 @@ list(APPEND gnss_sources
     channel.cc
     nav_decoding_impl.cc
     nav_solution_impl.cc
+    acquisition_impl.cc
 )
 
 set(gnss_sources "${gnss_sources}" PARENT_SCOPE)
@@ -30,6 +32,7 @@ endif(NOT gnss_sources)
 
 add_library(gnuradio-gnss SHARED ${gnss_sources})
 target_link_libraries(gnuradio-gnss gnuradio::gnuradio-runtime)
+target_link_libraries(gnuradio-gnss gnuradio::gnuradio-fft)
 target_link_libraries(gnuradio-gnss Eigen3::Eigen)
 target_include_directories(gnuradio-gnss
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
