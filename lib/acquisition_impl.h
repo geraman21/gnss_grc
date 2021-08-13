@@ -22,13 +22,12 @@ namespace gr
     {
     private:
       bool doColdStart = true;
-      unsigned int sampleFreq;
+      float sampleFreq;
       float ts;
-      int iterator = 0;
+      unsigned int iterator = 0;
       float codeFreqBasis = 1023000;
       float codeLength = 1023;
       float samplesPerCode;
-      float ts = 0;
       int numberOfFrqBins = 29;
       float IF = 9.548e6;
       std::vector<int> frqBins;
@@ -40,7 +39,7 @@ namespace gr
       std::vector<std::vector<float>> results;
 
     public:
-      acquisition_impl(unsigned int a_sampleFreq);
+      acquisition_impl(float a_sampleFreq);
       acquisition_impl();
       ~acquisition_impl();
 

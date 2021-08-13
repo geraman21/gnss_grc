@@ -14,7 +14,7 @@ templates:
 parameters:
 - id: a_sampleFreq
   label: Sampling Freq.
-  dtype: int
+  dtype: float
   value: 0
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.

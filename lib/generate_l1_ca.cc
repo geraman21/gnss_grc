@@ -3,6 +3,7 @@
 #include <bitset>
 #include "generate_l1_ca.h"
 #include "cmath"
+#include <iostream>
 
 std::vector<int> generateCa(int prn, int chip_shift)
 {
@@ -86,16 +87,18 @@ std::vector<int> generateCa(int prn, int chip_shift)
 
 std::vector<std::vector<int>> makeCaTable(int samplesPerCode)
 {
-    float codePhaseStep = 1023 / samplesPerCode;
+    float codePhaseStep = 1023.0 / samplesPerCode;
     std::vector<std::vector<int>> result(32);
+    std::vector<int> temp(samplesPerCode);
 
     for (int p = 0; p < 32; p++)
     {
         std::vector<int> caCode = generateCa(p + 1);
         for (int i = 1; i <= samplesPerCode; i++)
         {
-            result.at(p).at(i) = caCode.at(std::ceil(codePhaseStep * i - 1));
+            temp.at(i - 1) = caCode.at(ceil(codePhaseStep * i) - 1);
         }
+        result.at(p) = temp;
     }
 
     return result;
