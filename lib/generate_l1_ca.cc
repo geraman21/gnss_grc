@@ -4,6 +4,7 @@
 #include "generate_l1_ca.h"
 #include "cmath"
 #include <iostream>
+#include <complex>
 
 std::vector<int> generateCa(int prn, int chip_shift)
 {
@@ -85,11 +86,11 @@ std::vector<int> generateCa(int prn, int chip_shift)
     return dest;
 }
 
-std::vector<std::vector<int>> makeCaTable(int samplesPerCode)
+std::vector<std::vector<float>> makeCaTable(int samplesPerCode)
 {
     float codePhaseStep = 1023.0 / samplesPerCode;
-    std::vector<std::vector<int>> result(32);
-    std::vector<int> temp(samplesPerCode);
+    std::vector<std::vector<float>> result(32);
+    std::vector<float> temp(samplesPerCode);
 
     for (int p = 0; p < 32; p++)
     {
@@ -97,6 +98,25 @@ std::vector<std::vector<int>> makeCaTable(int samplesPerCode)
         for (int i = 1; i <= samplesPerCode; i++)
         {
             temp.at(i - 1) = caCode.at(ceil(codePhaseStep * i) - 1);
+        }
+        result.at(p) = temp;
+    }
+
+    return result;
+}
+
+std::vector<std::vector<std::complex<float>>> makeComplexCaTable(int samplesPerCode)
+{
+    float codePhaseStep = 1023.0 / samplesPerCode;
+    std::vector<std::vector<std::complex<float>>> result(32);
+    std::vector<std::complex<float>> temp(samplesPerCode);
+
+    for (int p = 0; p < 32; p++)
+    {
+        std::vector<int> caCode = generateCa(p + 1);
+        for (int i = 1; i <= samplesPerCode; i++)
+        {
+            temp.at(i - 1) = std::complex(caCode.at(ceil(codePhaseStep * i) - 1) * 1.0, 0.0);
         }
         result.at(p) = temp;
     }

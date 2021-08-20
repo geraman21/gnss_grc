@@ -23,15 +23,15 @@ namespace gr
     private:
       bool doColdStart = true;
       float sampleFreq;
-      float ts;
+      double ts;
       unsigned int iterator = 0;
       float codeFreqBasis = 1023000;
       float codeLength = 1023;
       float samplesPerCode;
       int numberOfFrqBins = 29;
-      float IF = 9.548e6;
+      double IF = 9.548e6;
       std::vector<int> frqBins;
-      std::vector<std::vector<int>> caCodesTable;
+      std::vector<std::vector<std::complex<float>>> caCodesTable;
       gr::fft::fft_real_fwd p1_fft_real;
       gr::fft::fft_complex_fwd p1_fft;
       gr::fft::fft_complex_rev p1_fft_rev;

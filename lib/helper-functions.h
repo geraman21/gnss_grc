@@ -1,6 +1,8 @@
 #include "ephemeris.h"
 #include <deque>
 #include <vector>
+#include <complex>
+#include <valarray>
 
 void calcloopCoef(float &coeff1,
                   float &coeff2,
@@ -29,4 +31,6 @@ void printEphemeris(Ephemeris *ephResults);
 
 std::vector<float>
 getPseudoRanges(std::vector<const void *> &data, int index, float startOffset, long int c);
-// std::vector<std::vector<double>> multiplyMatrices(std::vector<std::vector<double>> firstMatrix, std::vector<std::vector<double>> secondMatrix);
+
+void custom_fft(std::valarray<std::complex<double>> &x);
+void custom_ifft(std::valarray<std::complex<double>> &x);
