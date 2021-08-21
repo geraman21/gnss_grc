@@ -27,24 +27,19 @@ namespace py = pybind11;
 // pydoc.h is automatically generated in the build directory
 #include <tracking_ff_pydoc.h>
 
-void bind_tracking_ff(py::module& m)
+void bind_tracking_ff(py::module &m)
 {
 
-    using tracking_ff = gr::gnss::tracking_ff;
+     using tracking_ff = gr::gnss::tracking_ff;
 
+     py::class_<tracking_ff,
+                gr::sync_block,
+                gr::block,
+                gr::basic_block,
+                std::shared_ptr<tracking_ff>>(m, "tracking_ff", D(tracking_ff))
 
-    py::class_<tracking_ff,
-               gr::sync_block,
-               gr::block,
-               gr::basic_block,
-               std::shared_ptr<tracking_ff>>(m, "tracking_ff", D(tracking_ff))
-
-        .def(py::init(&tracking_ff::make),
-             py::arg("t_prn"),
-             py::arg("t_freq"),
-             py::arg("t_codePhase"),
-             D(tracking_ff, make))
-
-
-        ;
+         .def(py::init(&tracking_ff::make),
+              py::arg("_channelNum"),
+              py::arg("sampleFreq"),
+              D(tracking_ff, make));
 }

@@ -10,10 +10,7 @@
 #include "generate_l1_ca.h"
 #include "helper-functions.h"
 #include <cmath>
-#include <valarray>
-
-#include <fstream>
-#include <iterator>
+#include <numeric>
 
 namespace gr
 {
@@ -37,6 +34,7 @@ namespace gr
                          gr::io_signature::make(0, 0, 0)),
           p1_fft_real(a_sampleFreq / 1000, 1), p1_fft(a_sampleFreq / 1000, 1), p1_fft_rev(a_sampleFreq / 1000, 1), sampleFreq{a_sampleFreq}
     {
+      message_port_register_out(pmt::string_to_symbol("acquisition"));
       samplesPerCode = round(sampleFreq / (codeFreqBasis / codeLength));
       lognSignal.reserve(11 * samplesPerCode);
       caCodesTable = makeComplexCaTable(samplesPerCode);
@@ -79,51 +77,6 @@ namespace gr
           std::vector<std::complex<float>> caCodeFreqDom(samplesPerCode);
           memcpy(caCodeFreqDom.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
 
-          // std::vector<int> caCode = generateCa(1, 0);
-          // std::vector<std::complex<float>> caComplex;
-          // for (auto i : caCode)
-          // {
-          //   caComplex.push_back(std::complex<float>(i * 1.0, 0.0));
-          // }
-
-          // gr::fft::fft_complex_fwd test_fft(1023, 1);
-          // float a[]{1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, 1, 1, -1};
-          // std::vector<std::complex<float>> b(65536);
-          // for (int i = 0; i < 65536; i++)
-          // {
-          //   b.at(i) = caCodesTable.at(PRN - 1).at(i);
-          // }
-          // std::valarray<std::complex<float>> b(caCodesTable.at(PRN - 1).data(), 38192);
-          // std::valarray<std::complex<float>> b(std::complex<float>(0, 0), 65536);
-          // std::copy(&a[0], &a[0] + 38192, &b[27344]);
-
-          // std::complex<float> *t = test_fft.get_inbuf();
-          // memcpy(&t[0], caComplex.data(), sizeof(std::complex<float>) * 1023);
-          // test_fft.execute();
-          // std::vector<std::complex<float>> test(1023);
-          // memcpy(test.data(), test_fft.get_outbuf(), sizeof(std::complex<float>) * 1023);
-
-          // for (int ind = 0; ind < 20; ind++)
-          // {
-          //   if (PRN == 1)
-          //     // std::cout << caCodesTable.at(PRN - 1).at(ind) << "    ";
-          //     std::cout << test.at(ind).real() << "      " << test.at(ind).imag() << "i" << std::endl;
-          // }
-          // std::valarray<std::complex<double>> c(&b[0], 38192);
-          // custom_fft(c);
-
-          // for (int ind = 0; ind < 20; ind++)
-          // {
-          //   if (PRN == 1)
-          //     std::cout << b[ind].real() << "      " << b[ind].imag() << "i" << std::endl;
-          // }
-          // // custom_fft(b);
-          // for (int ind = 0; ind < 20; ind++)
-          // {
-          //   if (PRN == 1)
-          //     std::cout << b[ind].real() << "      " << b[ind].imag() << "i" << std::endl;
-          // }
-
           for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++)
           {
             //  Generate carrier wave frequency grid (0.5kHz step)
@@ -141,61 +94,8 @@ namespace gr
               float I2 = sinCarr * lognSignal.at(k + samplesPerCode);
               float Q2 = cosCarr * lognSignal.at(k + samplesPerCode);
 
-              // if (PRN == 1 && k == 71)
-              // {
-              //   std::cout << I1 << "    " << Q1 << std::endl;
-              // }
-
               IQSig1.at(k) = std::complex<float>(I1, Q1);
               IQSig2.at(k) = std::complex<float>(I2, Q2);
-            }
-            // std::vector<float> test1(samplesPerCode), test2(samplesPerCode);
-            // float max_test1{0}, max_test2{0};
-            // int max_index1{0}, max_index2{0};
-            // for (int i = 0; i < samplesPerCode; i++)
-            // {
-
-            //   float ac1 = std::abs(IQSig1.at(i));
-            //   float ac2 = std::abs(IQSig2.at(i));
-            //   test1.at(i) = ac1;
-            //   test2.at(i) = ac2;
-
-            //   if (max_test1 < ac1)
-            //   {
-            //     max_test1 = ac1;
-            //     max_index1 = i;
-            //   }
-            //   if (max_test2 < ac2)
-            //   {
-            //     max_test2 = ac2;
-            //     max_index2 = i;
-            //   }
-            // }
-
-            // if (PRN == 1 && frqBinIndex == 0)
-            // {
-            //   std::ofstream output_file("./example.txt");
-            //   std::ostream_iterator<float> output_iterator(output_file, "\n");
-            //   std::copy(test1.begin(), test1.end(), output_iterator);
-            // }
-
-            if (PRN == 1)
-            {
-              // std::cout << "Max1:   " << std::distance(test1.begin(), std::max_element(test1.begin(), test1.end())) << "   Max2:   " << std::distance(test2.begin(), std::max_element(test2.begin(), test2.end())) << std::endl;
-              // std::cout << IQSig2.at(71) << std::endl;
-
-              // for (int i = 169; i < 174; i++)
-              // {
-              //   std::cout << std::abs(IQSig1.at(i)) << "   ";
-              //   if (i == 173)
-              //     std::cout << std::endl;
-              // }
-
-              //   for (int i = 38187; i < 38192; i++)
-              //   {
-              //     std::cout << std::abs(IQSig1.at(i)) << "   ";
-              //     if (i == 38191)
-              //       std::cout << std::endl;
             }
 
             // IQfreqDom1 = fft(I1 + j * Q1);
@@ -219,8 +119,6 @@ namespace gr
                            caCodeFreqDom.begin(), IQfreqDom2.begin(),
                            std::multiplies<std::complex<float>>());
 
-            // TESTED UP UNTIL HERE ALL CORRECT
-
             std::vector<std::complex<float>> acqComplexRes1(samplesPerCode), acqComplexRes2(samplesPerCode);
             std::complex<float> *rev_ptr = p1_fft_rev.get_inbuf();
             memcpy(&rev_ptr[0], IQfreqDom1.data(), sizeof(gr_complex) * samplesPerCode);
@@ -230,62 +128,6 @@ namespace gr
             memcpy(&rev_ptr[0], IQfreqDom2.data(), sizeof(gr_complex) * samplesPerCode);
             p1_fft_rev.execute();
             memcpy(acqComplexRes2.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
-
-            // std::vector<float> test1(samplesPerCode), test2(samplesPerCode);
-            // float max_test1{0}, max_test2{0};
-            // int max_index1{0}, max_index2{0};
-            // for (int i = 0; i < samplesPerCode; i++)
-            // {
-            //   float ac1 = std::abs(acqComplexRes1.at(i));
-            //   float ac2 = std::abs(acqComplexRes2.at(i));
-            //   test1.at(i) = ac1;
-            //   test2.at(i) = ac2;
-
-            //   if (max_test1 < ac1)
-            //   {
-            //     max_test1 = ac1;
-            //     max_index1 = i;
-            //   }
-            //   if (max_test2 < ac2)
-            //   {
-            //     max_test2 = ac2;
-            //     max_index2 = i;
-            //   }
-            // }
-
-            // if (PRN == 1)
-            // {
-            //   std::cout << max_index1 << ":   " << max_test1 << "        " << max_index2 << ":   " << max_test2 << std::endl;
-            // }
-
-            // if (PRN == 1 && frqBinIndex == 0)
-            // {
-
-            //   float a[]{2, -2, -3, 3, 3, 4, -1, -6, -7, 8, 3, -2, -2, 2, 2, -2};
-            //   std::vector<std::complex<float>> testComplex(16);
-            //   for (int i = 0; i < 16; i++)
-            //   {
-            //     testComplex.at(i) = std::complex<float>(a[i], i * 1.0);
-            //   }
-            //   gr::fft::fft_complex_fwd test_fft_fwd(16, 1);
-            //   std::complex<float> *t_fwd = test_fft_fwd.get_inbuf();
-            //   memcpy(&t_fwd[0], testComplex.data(), sizeof(std::complex<float>) * 16);
-            //   test_fft_fwd.execute();
-            //   std::vector<std::complex<float>> test_fwd(16);
-            //   memcpy(test_fwd.data(), test_fft_fwd.get_outbuf(), sizeof(std::complex<float>) * 16);
-
-            //   gr::fft::fft_complex_rev test_fft(16, 1);
-            //   std::complex<float> *t = test_fft.get_inbuf();
-            //   memcpy(&t[0], test_fwd.data(), sizeof(std::complex<float>) * 16);
-            //   test_fft.execute();
-            //   std::vector<std::complex<float>> test(16);
-            //   memcpy(test.data(), test_fft.get_outbuf(), sizeof(std::complex<float>) * 16);
-
-            //   for (int ind = 0; ind < 16; ind++)
-            //   {
-            //     std::cout << test.at(ind).real() / 16 << "      " << test.at(ind).imag() / 16 << "i" << std::endl;
-            //   }
-            // }
 
             std::vector<float> acqRes1, acqRes2;
             float max1{0}, max2{0};
@@ -298,11 +140,7 @@ namespace gr
               acqRes1.push_back(ac1);
               acqRes2.push_back(ac2);
             }
-            // if (PRN == 1)
-            // {
 
-            //   std::cout << index1 << ":   " << max1 << "      " << index2 << ":   " << max2 << std::endl;
-            // }
             max1 = *std::max_element(acqRes1.begin(), acqRes1.end());
             max2 = *std::max_element(acqRes2.begin(), acqRes2.end());
             index1 = std::distance(acqRes1.begin(), std::max_element(acqRes1.begin(), acqRes1.end()));
@@ -364,48 +202,50 @@ namespace gr
             }
           }
 
-          std::cout << "Peaksize 1: " << peakSize << "   SecondPeakSze: " << secondPeakSize << "    Ratio:  " << peakSize / secondPeakSize << "   PRN:  " << PRN << "    CodePhase:  " << codePhase << std::endl;
+          if (peakSize / secondPeakSize > 2.5)
+          {
+            std::vector<int> caCode = generateCa(PRN);
+            std::vector<std::complex<float>> xCarrier;
+            xCarrier.reserve(samplesPerCode * 10);
+            float longSignalMean = std::accumulate(lognSignal.begin(), lognSignal.end(), 0.0) / lognSignal.size();
+            for (int i = 0; i < samplesPerCode * 10; i++)
+            {
+              int index = floor(ts * i * codeFreqBasis);
+              int caCodeIndex = index % 1023;
+              xCarrier.push_back(std::complex<float>((lognSignal.at(i + codePhase) - longSignalMean) * caCode.at(caCodeIndex), 0.0));
+            }
 
-          // if (peakSize / secondPeakSize > 2.5)
-          // {
-          //   std::vector<int> caCode = generateCa(PRN);
-          //   // int codeValueIndex = floor((ts * (1 : 10 * samplesPerCode)) / (1 / codeFreqBasis));
-          //   std::vector<float> xCarrier;
-          //   xCarrier.reserve(samplesPerCode * 10);
-          //   float longSignalMean = std::accumulate(lognSignal.begin(), lognSignal.end(), 0.0) / lognSignal.size();
-          //   for (int i = 0; i < samplesPerCode * 10; i++)
-          //   {
-          //     int index = floor(ts * i * codeFreqBasis);
-          //     int caCodeIndex = index % 1023;
-          //     xCarrier.push_back((lognSignal.at(i + codePhase) - longSignalMean) * caCode.at(caCodeIndex));
-          //   }
+            int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
+            gr::fft::fft_complex_fwd fft_num_pts(fftNumPts, 1);
 
-          //   int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
-          //   gr::fft::fft_real_fwd fft_num_pts(fftNumPts, 1);
+            std::complex<float> *ptr = fft_num_pts.get_inbuf();
+            memcpy(&ptr[0], xCarrier.data(), sizeof(gr_complex) * samplesPerCode * 10);
+            fft_num_pts.execute();
+            std::vector<std::complex<float>> fftxc(fftNumPts);
+            memcpy(fftxc.data(), fft_num_pts.get_outbuf(), sizeof(gr_complex) * fftNumPts);
+            std::vector<float> fftxcAbs;
+            fftxcAbs.reserve(fftxc.size());
+            for (auto val : fftxc)
+            {
+              fftxcAbs.push_back(std::abs(val));
+            }
 
-          //   float *ptr = fft_num_pts.get_inbuf();
-          //   memcpy(&ptr[0], xCarrier.data(), sizeof(float) * fftNumPts);
-          //   fft_num_pts.execute();
-          //   std::vector<std::complex<float>> fftxc(fftNumPts);
-          //   memcpy(fftxc.data(), fft_num_pts.get_outbuf(), sizeof(gr_complex) * fftNumPts);
-          //   std::vector<float> fftxcAbs;
-          //   fftxcAbs.reserve(fftxc.size());
-          //   for (auto val : fftxc)
-          //   {
-          //     fftxcAbs.push_back(std::abs(val));
-          //   }
+            int uniqFftPts = ceil((fftNumPts + 1) / 2);
 
-          //   int uniqFftPts = ceil((fftNumPts + 1) / 2);
+            int fftMaxIndex = std::max_element(fftxcAbs.begin() + 4, fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin() - 4;
+            float carrFreq = fftMaxIndex * sampleFreq / fftNumPts;
 
-          //   int fftMaxIndex = std::max_element(fftxcAbs.begin() + 4, fftxcAbs.end() - 5) - fftxcAbs.begin() - 4;
-          //   float fftMax = *std::max_element(fftxcAbs.begin() + 4, fftxcAbs.end() - 5);
+            // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
 
-          //   float carrFreq = fftMaxIndex * sampleFreq / fftNumPts;
-          //   // codePhase
-
-          //   std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
-          // }
+            acqResults.push_back(AcqResults(PRN, carrFreq, codePhase, peakSize / secondPeakSize));
+          }
         }
+        std::sort(acqResults.begin(), acqResults.end(), [](AcqResults a, AcqResults b)
+                  { return (a.peakMetric > b.peakMetric); });
+        auto size = sizeof(AcqResults) * acqResults.size();
+        auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults), size);
+        message_port_pub(pmt::string_to_symbol("acquisition"), pmt);
+
         doColdStart = false;
         iterator = 0;
       }

@@ -30,6 +30,10 @@ inputs:
   optional: true
 
 outputs:
+- domain: message
+  id: acquisition
+  optional: true
+  hide: false
 #- label: ...
 #  domain: ...
 #  dtype: ...

@@ -4,7 +4,7 @@ category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.tracking_ff(${t_prn}, ${t_freq}, ${t_codePhase})
+  make: gnss.tracking_ff(${_channelNum}, ${_sampleFreq})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -12,18 +12,15 @@ templates:
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
-- id: t_prn
-  label: Incoming PRN
+- id: _channelNum
+  label: Channel Number
   dtype: int
   value: 0
-- id: t_codePhase
-  label: Code Phase
-  dtype: int
-  value: 0
-- id: t_freq
-  label: Init Freq
+- id: _sampleFreq
+  label: Sampling Freq
   dtype: float
   value: 0
+
 # - id: parametername_replace_me
 #   label: FIX ME:
 #   dtype: string
@@ -43,6 +40,10 @@ inputs:
 - label: in
   dtype: float
   optional: true
+- domain: message
+  id: acquisition
+  optional: true
+  hide: false
 
 outputs:
 - label: out

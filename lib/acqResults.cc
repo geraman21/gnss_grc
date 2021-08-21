@@ -1,9 +1,6 @@
 #include <vector>
 #include "acqResults.h"
 
-AcqResults::AcqResults()
+AcqResults::AcqResults(int _PRN, float _carrFreq, float _codePhase, float _peakMetric) : PRN{_PRN}, carrFreq{_carrFreq}, codePhase{_codePhase}, peakMetric{_peakMetric}
 {
-    carrFreq.reserve(32);
-    codePhase.reserve(32);
-    peakMetric.reserve(32);
 }

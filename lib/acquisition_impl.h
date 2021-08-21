@@ -12,6 +12,7 @@
 #include <vector>
 #include <gnuradio/fft/fft.h>
 #include "cmath"
+#include "acqResults.h"
 
 namespace gr
 {
@@ -37,6 +38,7 @@ namespace gr
       gr::fft::fft_complex_rev p1_fft_rev;
       std::vector<float> lognSignal;
       std::vector<std::vector<float>> results;
+      std::vector<AcqResults> acqResults;
 
     public:
       acquisition_impl(float a_sampleFreq);

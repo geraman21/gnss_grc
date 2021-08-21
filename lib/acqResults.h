@@ -14,10 +14,11 @@ class AcqResults
 {
 
 public:
-    AcqResults();
-    std::vector<double> carrFreq;
-    std::vector<double> codePhase;
-    std::vector<double> peakMetric;
+    AcqResults(int _PRN, float _carrFreq, float _codePhase, float _peakMetric);
+    float carrFreq;
+    float codePhase;
+    float peakMetric;
+    int PRN;
 };
 
 #endif /* INCLUDED_GNSS_TRACKING_FF_IMPL_H */
