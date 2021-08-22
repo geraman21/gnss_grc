@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(tracking_ff.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(28c3247e1c7b885c72ada1513f5b3c41)                     */
+/* BINDTOOL_HEADER_FILE_HASH(ffac55b60c4412cd5e7fd0ca15134d7b)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -30,16 +30,15 @@ namespace py = pybind11;
 void bind_tracking_ff(py::module &m)
 {
 
-     using tracking_ff = gr::gnss::tracking_ff;
+    using tracking_ff = gr::gnss::tracking_ff;
 
-     py::class_<tracking_ff,
-                gr::sync_block,
-                gr::block,
-                gr::basic_block,
-                std::shared_ptr<tracking_ff>>(m, "tracking_ff", D(tracking_ff))
+    py::class_<tracking_ff, gr::sync_block, gr::block, gr::basic_block,
+               std::shared_ptr<tracking_ff>>(m, "tracking_ff", D(tracking_ff))
 
-         .def(py::init(&tracking_ff::make),
-              py::arg("_channelNum"),
-              py::arg("sampleFreq"),
-              D(tracking_ff, make));
+        .def(py::init(&tracking_ff::make),
+             py::arg("_channelNum"),
+             py::arg("_sampleFreq"),
+             D(tracking_ff, make))
+
+        ;
 }

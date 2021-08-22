@@ -22,6 +22,7 @@ list(APPEND gnss_sources
     nav_decoding_impl.cc
     nav_solution_impl.cc
     acquisition_impl.cc
+    data_distributor_impl.cc
 )
 
 set(gnss_sources "${gnss_sources}" PARENT_SCOPE)

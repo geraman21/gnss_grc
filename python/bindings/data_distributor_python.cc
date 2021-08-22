@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(acquisition.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(370cd407337dd6e5eea5b4366dec5466)                     */
+/* BINDTOOL_HEADER_FILE(data_distributor.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(dd57b10ab717c81b895e2330b9f247e3)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,21 +23,21 @@
 
 namespace py = pybind11;
 
-#include <gnss/acquisition.h>
+#include <gnss/data_distributor.h>
 // pydoc.h is automatically generated in the build directory
-#include <acquisition_pydoc.h>
+#include <data_distributor_pydoc.h>
 
-void bind_acquisition(py::module &m)
+void bind_data_distributor(py::module &m)
 {
 
-    using acquisition = gr::gnss::acquisition;
+    using data_distributor = gr::gnss::data_distributor;
 
-    py::class_<acquisition, gr::block, gr::basic_block,
-               std::shared_ptr<acquisition>>(m, "acquisition", D(acquisition))
+    py::class_<data_distributor, gr::sync_block, gr::block, gr::basic_block,
+               std::shared_ptr<data_distributor>>(m, "data_distributor", D(data_distributor))
 
-        .def(py::init(&acquisition::make),
-             py::arg("a_sampleFreq"),
-             D(acquisition, make))
+        .def(py::init(&data_distributor::make),
+             py::arg("numSamples"),
+             D(data_distributor, make))
 
         ;
 }

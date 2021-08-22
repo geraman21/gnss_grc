@@ -31,6 +31,7 @@ namespace gr
         /*
  * The private constructor
  */
+
         tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
             : gr::sync_block("tracking_ff",
                              gr::io_signature::make(
@@ -44,25 +45,27 @@ namespace gr
             set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg)
                             {
                                 std::vector<AcqResults> data_object = *(reinterpret_cast<const std::vector<AcqResults> *>(pmt::blob_data(msg)));
-
-                                for (auto i : data_object)
+                                // if (data_object.size() > channelNum && (PRN == 0 || PRN != data_object.at(channelNum).PRN))
+                                if (data_object.size() > channelNum && PRN == 0)
                                 {
-                                    std::cout << i.codePhase << std::endl;
+                                    // reset();
+                                    codeFreq = 1023000;
+                                    codePhaseStep = codeFreq * samplePeriod;
+                                    blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
+                                    channel = new Channel(data_object.at(channelNum).PRN, data_object.at(channelNum).carrFreq, data_object.at(channelNum).codePhase, 'T');
+                                    float totalSamplesFromStart = totalSamples - channel->codePhase;
+                                    float fullMsPassed = ceil(totalSamplesFromStart / blksize);
+                                    codePhase = fullMsPassed * blksize - totalSamplesFromStart;
+                                    carrFreq = channel->acquiredFreq;
+                                    carrFreqBasis = channel->acquiredFreq;
+                                    PRN = data_object.at(channelNum).PRN;
+                                    caCode = generateCa(channel->prn);
+                                    caCode.insert(caCode.begin(), caCode.back());
+                                    caCode.push_back(caCode.at(1));
+                                    delete (channel);
+                                    std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
+                                    performTracking = true;
                                 }
-
-                                channel = new Channel(data_object.at(channelNum).PRN, data_object.at(channelNum).carrFreq, data_object.at(channelNum).codePhase, 'T');
-                                float totalSamplesFromStart = totalSamples - channel->codePhase;
-                                float fullMsPassed = ceil(totalSamplesFromStart / blksize);
-                                codePhase = fullMsPassed * blksize - totalSamplesFromStart;
-                                carrFreq = channel->acquiredFreq;
-                                carrFreqBasis = channel->acquiredFreq;
-                                PRN = data_object.at(channelNum).PRN;
-                                caCode = generateCa(channel->prn);
-                                caCode.insert(caCode.begin(), caCode.back());
-                                caCode.push_back(caCode.at(1));
-
-                                delete (channel);
-                                performTracking = true;
                             });
             // channel = new Channel(15, 9.54992e+06, 36320, 'T');
             codePhaseStep = codeFreq * samplePeriod;
@@ -77,27 +80,28 @@ namespace gr
  * Our virtual destructor.
  */
         tracking_ff_impl::~tracking_ff_impl() {}
+        void tracking_ff_impl::reset()
+        {
+            remCodePhase = 0.0;
+            remCarrPhase = 0.0;
+            oldCarrNco = 0.0;
+            oldCarrError = 0.0;
+            oldCodeNco = 0.0;
+            oldCodeError = 0.0;
+            carrFreq = 0.0;
+            codeFreq = 1023000;
+            Q_E = I_E = Q_P = I_P = Q_L = I_L = 0.0;
+        }
 
         int tracking_ff_impl::work(int noutput_items,
                                    gr_vector_const_void_star &input_items,
                                    gr_vector_void_star &output_items)
         {
+
             const input_type *in = reinterpret_cast<const input_type *>(input_items[0]);
             output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
-            if (!performTracking)
-                totalSamples += noutput_items;
-
-            // if (test <= 3)
-            // {
-            //     std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
-            //     test++;
-            // }
-            // Align the phase of the signal
-            if (codePhase > 0 && performTracking)
-            {
-                codePhase -= noutput_items;
-            }
+            totalSamples += noutput_items;
 
             // Declare Early Late and Prompt code variables and their starting points
             float tStartEarly = remCodePhase - earlyLateSpc;
@@ -111,16 +115,12 @@ namespace gr
                 {
                     if (test == 0)
                     {
-                        codePhase += i;
+                        std::cout << "TEST is 0  Iterator count is:  " << i << std::endl;
                         test++;
                     }
+                    if (codePhase > 0)
+                        codePhase--;
 
-                    if (codePhase < 0 && i == (noutput_items + codePhase - 1))
-                    {
-                        codePhase = 0;
-                    }
-
-                    // if (codePhase == 0) {
                     if (codePhase == 0)
                     {
                         float iteratorStep = codePhaseStep * iterator;

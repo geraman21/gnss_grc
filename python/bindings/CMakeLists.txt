@@ -31,7 +31,8 @@ list(APPEND gnss_python_files
     tracking_ff_python.cc
     nav_decoding_python.cc
     nav_solution_python.cc
-    acquisition_python.cc python_bindings.cc)
+    acquisition_python.cc
+    data_distributor_python.cc python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(gnss 
    ../..

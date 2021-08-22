@@ -26,6 +26,7 @@ namespace gr
             // Nothing to declare in this block.
             double totalSamples{};
             int PRN{};
+            float peakMetric{};
             int channelNum;
             bool performTracking{false};
             float I_E{0}, Q_E{0}, Q_P{0}, I_P{0}, I_L{0}, Q_L{0};
@@ -59,9 +60,9 @@ namespace gr
             float dllDampingRatio = 0.7;
             float loopGainCarr = 0.25;
             float loopGainCode = 1;
-
             float tau1carr, tau2carr;
             float tau1code, tau2code;
+            void reset();
 
         public:
             tracking_ff_impl(int _channelNum, float _sampleFreq);

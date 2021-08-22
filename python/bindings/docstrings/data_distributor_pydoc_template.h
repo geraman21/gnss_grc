@@ -16,9 +16,9 @@
 
 
  
- static const char *__doc_gr_gnss_acquisition = R"doc()doc";
+ static const char *__doc_gr_gnss_data_distributor = R"doc()doc";
 
 
- static const char *__doc_gr_gnss_acquisition_make = R"doc()doc";
+ static const char *__doc_gr_gnss_data_distributor_make = R"doc()doc";
 
   

@@ -36,7 +36,7 @@ namespace gr
       gr::fft::fft_real_fwd p1_fft_real;
       gr::fft::fft_complex_fwd p1_fft;
       gr::fft::fft_complex_rev p1_fft_rev;
-      std::vector<float> lognSignal;
+      std::vector<float> longSignal;
       std::vector<std::vector<float>> results;
       std::vector<AcqResults> acqResults;
 

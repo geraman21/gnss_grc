@@ -28,19 +28,213 @@ namespace gr
  */
     acquisition_impl::acquisition_impl(float a_sampleFreq)
         : gr::sync_block("acquisition",
-                         gr::io_signature::make(1 /* min inputs */,
+                         gr::io_signature::make(0 /* min inputs */,
                                                 1 /* max inputs */,
                                                 sizeof(input_type)),
                          gr::io_signature::make(0, 0, 0)),
           p1_fft_real(a_sampleFreq / 1000, 1), p1_fft(a_sampleFreq / 1000, 1), p1_fft_rev(a_sampleFreq / 1000, 1), sampleFreq{a_sampleFreq}
     {
+      message_port_register_in(pmt::string_to_symbol("data_vector"));
       message_port_register_out(pmt::string_to_symbol("acquisition"));
       samplesPerCode = round(sampleFreq / (codeFreqBasis / codeLength));
-      lognSignal.reserve(11 * samplesPerCode);
       caCodesTable = makeComplexCaTable(samplesPerCode);
       frqBins.resize(numberOfFrqBins, 0);
       results.resize(numberOfFrqBins);
       ts = 1.0 / sampleFreq;
+
+      set_msg_handler(pmt::mp("data_vector"), [this](const pmt::pmt_t &msg)
+                      {
+                        longSignal = *(reinterpret_cast<const std::vector<float> *>(pmt::blob_data(msg)));
+
+                        for (int PRN = 1; PRN <= 32; PRN++)
+                        {
+                          std::complex<float> *dst = p1_fft.get_inbuf();
+                          memcpy(&dst[0], caCodesTable.at(PRN - 1).data(), sizeof(std::complex<float>) * samplesPerCode);
+                          p1_fft.execute();
+                          std::vector<std::complex<float>> caCodeFreqDom(samplesPerCode);
+                          memcpy(caCodeFreqDom.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+
+                          for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++)
+                          {
+                            //  Generate carrier wave frequency grid (0.5kHz step)
+                            frqBins.at(frqBinIndex) = IF - 7000 + 0.5e3 * frqBinIndex;
+                            std::vector<std::complex<float>> IQSig1(samplesPerCode);
+                            std::vector<std::complex<float>> IQSig2(samplesPerCode);
+                            for (int k = 0; k < samplesPerCode; k++)
+                            {
+                              caCodeFreqDom.at(k) = std::conj(caCodeFreqDom.at(k));
+                              // Generate local sine and cosine
+                              double sinCarr = sin(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
+                              double cosCarr = cos(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
+                              float I1 = sinCarr * longSignal.at(k);
+                              float Q1 = cosCarr * longSignal.at(k);
+                              float I2 = sinCarr * longSignal.at(k + samplesPerCode);
+                              float Q2 = cosCarr * longSignal.at(k + samplesPerCode);
+
+                              IQSig1.at(k) = std::complex<float>(I1, Q1);
+                              IQSig2.at(k) = std::complex<float>(I2, Q2);
+                            }
+
+                            // IQfreqDom1 = fft(I1 + j * Q1);
+                            // IQfreqDom2 = fft(I2 + j * Q2);
+                            std::complex<float> *ptr = p1_fft.get_inbuf();
+                            memcpy(&ptr[0], IQSig1.data(), sizeof(gr_complex) * samplesPerCode);
+                            p1_fft.execute();
+                            std::vector<std::complex<float>> IQfreqDom1(samplesPerCode);
+                            memcpy(IQfreqDom1.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+
+                            std::complex<float> *ptr2 = p1_fft.get_inbuf();
+                            memcpy(&ptr2[0], IQSig2.data(), sizeof(gr_complex) * samplesPerCode);
+                            p1_fft.execute();
+                            std::vector<std::complex<float>> IQfreqDom2(samplesPerCode);
+                            memcpy(IQfreqDom2.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+
+                            std::transform(IQfreqDom1.begin(), IQfreqDom1.end(),
+                                           caCodeFreqDom.begin(), IQfreqDom1.begin(),
+                                           std::multiplies<std::complex<float>>());
+                            std::transform(IQfreqDom2.begin(), IQfreqDom2.end(),
+                                           caCodeFreqDom.begin(), IQfreqDom2.begin(),
+                                           std::multiplies<std::complex<float>>());
+
+                            std::vector<std::complex<float>> acqComplexRes1(samplesPerCode), acqComplexRes2(samplesPerCode);
+                            std::complex<float> *rev_ptr = p1_fft_rev.get_inbuf();
+                            memcpy(&rev_ptr[0], IQfreqDom1.data(), sizeof(gr_complex) * samplesPerCode);
+                            p1_fft_rev.execute();
+                            memcpy(acqComplexRes1.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+
+                            memcpy(&rev_ptr[0], IQfreqDom2.data(), sizeof(gr_complex) * samplesPerCode);
+                            p1_fft_rev.execute();
+                            memcpy(acqComplexRes2.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+
+                            std::vector<float> acqRes1, acqRes2;
+                            float max1{0}, max2{0};
+                            int index1{0}, index2{0};
+                            for (int i = 0; i < samplesPerCode; i++)
+                            {
+
+                              float ac1 = std::pow(std::abs(acqComplexRes1.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
+                              float ac2 = std::pow(std::abs(acqComplexRes2.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
+                              acqRes1.push_back(ac1);
+                              acqRes2.push_back(ac2);
+                            }
+
+                            max1 = *std::max_element(acqRes1.begin(), acqRes1.end());
+                            max2 = *std::max_element(acqRes2.begin(), acqRes2.end());
+                            index1 = std::distance(acqRes1.begin(), std::max_element(acqRes1.begin(), acqRes1.end()));
+                            index2 = std::distance(acqRes2.begin(), std::max_element(acqRes2.begin(), acqRes2.end()));
+
+                            if (max1 > max2)
+                              results.at(frqBinIndex) = acqRes1;
+                            else
+                              results.at(frqBinIndex) = acqRes2;
+                          }
+                          float peakSize{0};
+                          int frequencyBinIndex{0}, codePhase{0};
+
+                          for (int i = 0; i < results.size(); i++)
+                          {
+                            float max_element = *std::max_element(results.at(i).begin(), results.at(i).end());
+                            if (peakSize < max_element)
+                            {
+                              peakSize = max_element;
+                              frequencyBinIndex = i;
+                              codePhase = std::max_element(results.at(i).begin(), results.at(i).end()) - results.at(i).begin();
+                            }
+                          }
+                          int samplesPerCodeChip = std::round(sampleFreq / codeFreqBasis);
+                          int excludeRangeIndex1 = codePhase - samplesPerCodeChip;
+                          int excludeRangeIndex2 = codePhase + samplesPerCodeChip;
+                          int codePhaseRangeStart{0}, codePhaseRangeEnd{0};
+                          bool inclusive = true;
+                          if (excludeRangeIndex1 < 1)
+                          {
+                            codePhaseRangeStart = excludeRangeIndex2;
+                            codePhaseRangeEnd = samplesPerCode + excludeRangeIndex1;
+                          }
+                          else if (excludeRangeIndex2 >= samplesPerCode)
+                          {
+                            codePhaseRangeStart = excludeRangeIndex2 - samplesPerCode;
+                            codePhaseRangeEnd = excludeRangeIndex1;
+                          }
+                          else
+                          {
+                            codePhaseRangeStart = excludeRangeIndex1;
+                            codePhaseRangeEnd = excludeRangeIndex2;
+                            inclusive = false;
+                          }
+
+                          float secondPeakSize{0};
+
+                          for (int i = 0; i < samplesPerCode; i++)
+                          {
+                            if (inclusive && (i >= codePhaseRangeStart && i < codePhaseRangeEnd))
+                            {
+                              if (secondPeakSize < results.at(frequencyBinIndex).at(i))
+                                secondPeakSize = results.at(frequencyBinIndex).at(i);
+                            }
+                            else if (!inclusive && i < codePhaseRangeStart || i > codePhaseRangeEnd)
+                            {
+                              if (secondPeakSize < results.at(frequencyBinIndex).at(i))
+                                secondPeakSize = results.at(frequencyBinIndex).at(i);
+                            }
+                          }
+
+                          if (peakSize / secondPeakSize > 2.5)
+                          {
+                            std::vector<int> caCode = generateCa(PRN);
+                            std::vector<std::complex<float>> xCarrier;
+                            xCarrier.reserve(samplesPerCode * 10);
+                            float longSignalMean = std::accumulate(longSignal.begin(), longSignal.end(), 0.0) / longSignal.size();
+                            for (int i = 0; i < samplesPerCode * 10; i++)
+                            {
+                              int index = floor(ts * i * codeFreqBasis);
+                              int caCodeIndex = index % 1023;
+                              xCarrier.push_back(std::complex<float>((longSignal.at(i + codePhase) - longSignalMean) * caCode.at(caCodeIndex), 0.0));
+                            }
+
+                            int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
+                            gr::fft::fft_complex_fwd fft_num_pts(fftNumPts, 1);
+
+                            std::complex<float> *ptr = fft_num_pts.get_inbuf();
+                            memcpy(&ptr[0], xCarrier.data(), sizeof(gr_complex) * samplesPerCode * 10);
+                            fft_num_pts.execute();
+                            std::vector<std::complex<float>> fftxc(fftNumPts);
+                            memcpy(fftxc.data(), fft_num_pts.get_outbuf(), sizeof(gr_complex) * fftNumPts);
+                            std::vector<float> fftxcAbs;
+                            fftxcAbs.reserve(fftxc.size());
+                            for (auto val : fftxc)
+                            {
+                              fftxcAbs.push_back(std::abs(val));
+                            }
+
+                            int uniqFftPts = ceil((fftNumPts + 1) / 2);
+
+                            int fftMaxIndex = std::max_element(fftxcAbs.begin() + 4, fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin() - 4;
+                            float carrFreq = fftMaxIndex * sampleFreq / fftNumPts;
+
+                            // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
+                            AcqResults res(PRN, carrFreq, codePhase, peakSize / secondPeakSize);
+                            acqResults.push_back(res);
+
+                            std::sort(acqResults.begin(), acqResults.end(), [](AcqResults a, AcqResults b)
+                                      { return (a.peakMetric > b.peakMetric); });
+
+                            auto size = sizeof(AcqResults) * acqResults.size();
+                            auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults), size);
+                            message_port_pub(pmt::string_to_symbol("acquisition"), pmt);
+                          }
+                        }
+                        // std::sort(acqResults.begin(), acqResults.end(), [](AcqResults a, AcqResults b)
+                        //           { return (a.peakMetric > b.peakMetric); });
+
+                        // for (int i = 0; i < 4; i++)
+                        // {
+                        //   std::cout << "PRN: " << acqResults.at(i).PRN << " -> CarrFreq: " << acqResults.at(i).carrFreq << ", CodePhase: " << acqResults.at(i).codePhase << std::endl;
+                        // }
+                        // auto size = sizeof(AcqResults) * acqResults.size();
+                        // auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults), size);
+                        // message_port_pub(pmt::string_to_symbol("acquisition"), pmt);
+                      });
     }
 
     /*
@@ -56,199 +250,199 @@ namespace gr
     {
       const input_type *in = reinterpret_cast<const input_type *>(input_items[0]);
       // Collect 11 ms of data required for acquisition cold start
-      for (int i = 0; i < noutput_items; i++)
-      {
-        if (doColdStart && iterator < 11 * samplesPerCode)
-        {
-          lognSignal.push_back(in[i]);
-          iterator++;
-        }
-        else
-          break;
-      }
+      // for (int i = 0; i < noutput_items; i++)
+      // {
+      //   if (doColdStart && iterator < 11 * samplesPerCode)
+      //   {
+      //     longSignal.push_back(in[i]);
+      //     iterator++;
+      //   }
+      //   else
+      //     break;
+      // }
 
-      if (doColdStart && iterator == 11 * samplesPerCode)
-      {
-        for (int PRN = 1; PRN <= 32; PRN++)
-        {
-          std::complex<float> *dst = p1_fft.get_inbuf();
-          memcpy(&dst[0], caCodesTable.at(PRN - 1).data(), sizeof(std::complex<float>) * samplesPerCode);
-          p1_fft.execute();
-          std::vector<std::complex<float>> caCodeFreqDom(samplesPerCode);
-          memcpy(caCodeFreqDom.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+      // if (doColdStart && iterator == 11 * samplesPerCode)
+      // {
+      //   for (int PRN = 1; PRN <= 32; PRN++)
+      //   {
+      //     std::complex<float> *dst = p1_fft.get_inbuf();
+      //     memcpy(&dst[0], caCodesTable.at(PRN - 1).data(), sizeof(std::complex<float>) * samplesPerCode);
+      //     p1_fft.execute();
+      //     std::vector<std::complex<float>> caCodeFreqDom(samplesPerCode);
+      //     memcpy(caCodeFreqDom.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
 
-          for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++)
-          {
-            //  Generate carrier wave frequency grid (0.5kHz step)
-            frqBins.at(frqBinIndex) = IF - 7000 + 0.5e3 * frqBinIndex;
-            std::vector<std::complex<float>> IQSig1(samplesPerCode);
-            std::vector<std::complex<float>> IQSig2(samplesPerCode);
-            for (int k = 0; k < samplesPerCode; k++)
-            {
-              caCodeFreqDom.at(k) = std::conj(caCodeFreqDom.at(k));
-              // Generate local sine and cosine
-              double sinCarr = sin(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
-              double cosCarr = cos(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
-              float I1 = sinCarr * lognSignal.at(k);
-              float Q1 = cosCarr * lognSignal.at(k);
-              float I2 = sinCarr * lognSignal.at(k + samplesPerCode);
-              float Q2 = cosCarr * lognSignal.at(k + samplesPerCode);
+      //     for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++)
+      //     {
+      //       //  Generate carrier wave frequency grid (0.5kHz step)
+      //       frqBins.at(frqBinIndex) = IF - 7000 + 0.5e3 * frqBinIndex;
+      //       std::vector<std::complex<float>> IQSig1(samplesPerCode);
+      //       std::vector<std::complex<float>> IQSig2(samplesPerCode);
+      //       for (int k = 0; k < samplesPerCode; k++)
+      //       {
+      //         caCodeFreqDom.at(k) = std::conj(caCodeFreqDom.at(k));
+      //         // Generate local sine and cosine
+      //         double sinCarr = sin(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
+      //         double cosCarr = cos(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
+      //         float I1 = sinCarr * longSignal.at(k);
+      //         float Q1 = cosCarr * longSignal.at(k);
+      //         float I2 = sinCarr * longSignal.at(k + samplesPerCode);
+      //         float Q2 = cosCarr * longSignal.at(k + samplesPerCode);
 
-              IQSig1.at(k) = std::complex<float>(I1, Q1);
-              IQSig2.at(k) = std::complex<float>(I2, Q2);
-            }
+      //         IQSig1.at(k) = std::complex<float>(I1, Q1);
+      //         IQSig2.at(k) = std::complex<float>(I2, Q2);
+      //       }
 
-            // IQfreqDom1 = fft(I1 + j * Q1);
-            // IQfreqDom2 = fft(I2 + j * Q2);
-            std::complex<float> *ptr = p1_fft.get_inbuf();
-            memcpy(&ptr[0], IQSig1.data(), sizeof(gr_complex) * samplesPerCode);
-            p1_fft.execute();
-            std::vector<std::complex<float>> IQfreqDom1(samplesPerCode);
-            memcpy(IQfreqDom1.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+      //       // IQfreqDom1 = fft(I1 + j * Q1);
+      //       // IQfreqDom2 = fft(I2 + j * Q2);
+      //       std::complex<float> *ptr = p1_fft.get_inbuf();
+      //       memcpy(&ptr[0], IQSig1.data(), sizeof(gr_complex) * samplesPerCode);
+      //       p1_fft.execute();
+      //       std::vector<std::complex<float>> IQfreqDom1(samplesPerCode);
+      //       memcpy(IQfreqDom1.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
 
-            std::complex<float> *ptr2 = p1_fft.get_inbuf();
-            memcpy(&ptr2[0], IQSig2.data(), sizeof(gr_complex) * samplesPerCode);
-            p1_fft.execute();
-            std::vector<std::complex<float>> IQfreqDom2(samplesPerCode);
-            memcpy(IQfreqDom2.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+      //       std::complex<float> *ptr2 = p1_fft.get_inbuf();
+      //       memcpy(&ptr2[0], IQSig2.data(), sizeof(gr_complex) * samplesPerCode);
+      //       p1_fft.execute();
+      //       std::vector<std::complex<float>> IQfreqDom2(samplesPerCode);
+      //       memcpy(IQfreqDom2.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
 
-            std::transform(IQfreqDom1.begin(), IQfreqDom1.end(),
-                           caCodeFreqDom.begin(), IQfreqDom1.begin(),
-                           std::multiplies<std::complex<float>>());
-            std::transform(IQfreqDom2.begin(), IQfreqDom2.end(),
-                           caCodeFreqDom.begin(), IQfreqDom2.begin(),
-                           std::multiplies<std::complex<float>>());
+      //       std::transform(IQfreqDom1.begin(), IQfreqDom1.end(),
+      //                      caCodeFreqDom.begin(), IQfreqDom1.begin(),
+      //                      std::multiplies<std::complex<float>>());
+      //       std::transform(IQfreqDom2.begin(), IQfreqDom2.end(),
+      //                      caCodeFreqDom.begin(), IQfreqDom2.begin(),
+      //                      std::multiplies<std::complex<float>>());
 
-            std::vector<std::complex<float>> acqComplexRes1(samplesPerCode), acqComplexRes2(samplesPerCode);
-            std::complex<float> *rev_ptr = p1_fft_rev.get_inbuf();
-            memcpy(&rev_ptr[0], IQfreqDom1.data(), sizeof(gr_complex) * samplesPerCode);
-            p1_fft_rev.execute();
-            memcpy(acqComplexRes1.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+      //       std::vector<std::complex<float>> acqComplexRes1(samplesPerCode), acqComplexRes2(samplesPerCode);
+      //       std::complex<float> *rev_ptr = p1_fft_rev.get_inbuf();
+      //       memcpy(&rev_ptr[0], IQfreqDom1.data(), sizeof(gr_complex) * samplesPerCode);
+      //       p1_fft_rev.execute();
+      //       memcpy(acqComplexRes1.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
 
-            memcpy(&rev_ptr[0], IQfreqDom2.data(), sizeof(gr_complex) * samplesPerCode);
-            p1_fft_rev.execute();
-            memcpy(acqComplexRes2.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
+      //       memcpy(&rev_ptr[0], IQfreqDom2.data(), sizeof(gr_complex) * samplesPerCode);
+      //       p1_fft_rev.execute();
+      //       memcpy(acqComplexRes2.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
 
-            std::vector<float> acqRes1, acqRes2;
-            float max1{0}, max2{0};
-            int index1{0}, index2{0};
-            for (int i = 0; i < samplesPerCode; i++)
-            {
+      //       std::vector<float> acqRes1, acqRes2;
+      //       float max1{0}, max2{0};
+      //       int index1{0}, index2{0};
+      //       for (int i = 0; i < samplesPerCode; i++)
+      //       {
 
-              float ac1 = std::pow(std::abs(acqComplexRes1.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
-              float ac2 = std::pow(std::abs(acqComplexRes2.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
-              acqRes1.push_back(ac1);
-              acqRes2.push_back(ac2);
-            }
+      //         float ac1 = std::pow(std::abs(acqComplexRes1.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
+      //         float ac2 = std::pow(std::abs(acqComplexRes2.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
+      //         acqRes1.push_back(ac1);
+      //         acqRes2.push_back(ac2);
+      //       }
 
-            max1 = *std::max_element(acqRes1.begin(), acqRes1.end());
-            max2 = *std::max_element(acqRes2.begin(), acqRes2.end());
-            index1 = std::distance(acqRes1.begin(), std::max_element(acqRes1.begin(), acqRes1.end()));
-            index2 = std::distance(acqRes2.begin(), std::max_element(acqRes2.begin(), acqRes2.end()));
+      //       max1 = *std::max_element(acqRes1.begin(), acqRes1.end());
+      //       max2 = *std::max_element(acqRes2.begin(), acqRes2.end());
+      //       index1 = std::distance(acqRes1.begin(), std::max_element(acqRes1.begin(), acqRes1.end()));
+      //       index2 = std::distance(acqRes2.begin(), std::max_element(acqRes2.begin(), acqRes2.end()));
 
-            if (max1 > max2)
-              results.at(frqBinIndex) = acqRes1;
-            else
-              results.at(frqBinIndex) = acqRes2;
-          }
-          float peakSize{0};
-          int frequencyBinIndex{0}, codePhase{0};
+      //       if (max1 > max2)
+      //         results.at(frqBinIndex) = acqRes1;
+      //       else
+      //         results.at(frqBinIndex) = acqRes2;
+      //     }
+      //     float peakSize{0};
+      //     int frequencyBinIndex{0}, codePhase{0};
 
-          for (int i = 0; i < results.size(); i++)
-          {
-            float max_element = *std::max_element(results.at(i).begin(), results.at(i).end());
-            if (peakSize < max_element)
-            {
-              peakSize = max_element;
-              frequencyBinIndex = i;
-              codePhase = std::max_element(results.at(i).begin(), results.at(i).end()) - results.at(i).begin();
-            }
-          }
-          int samplesPerCodeChip = std::round(sampleFreq / codeFreqBasis);
-          int excludeRangeIndex1 = codePhase - samplesPerCodeChip;
-          int excludeRangeIndex2 = codePhase + samplesPerCodeChip;
-          int codePhaseRangeStart{0}, codePhaseRangeEnd{0};
-          bool inclusive = true;
-          if (excludeRangeIndex1 < 1)
-          {
-            codePhaseRangeStart = excludeRangeIndex2;
-            codePhaseRangeEnd = samplesPerCode + excludeRangeIndex1;
-          }
-          else if (excludeRangeIndex2 >= samplesPerCode)
-          {
-            codePhaseRangeStart = excludeRangeIndex2 - samplesPerCode;
-            codePhaseRangeEnd = excludeRangeIndex1;
-          }
-          else
-          {
-            codePhaseRangeStart = excludeRangeIndex1;
-            codePhaseRangeEnd = excludeRangeIndex2;
-            inclusive = false;
-          }
+      //     for (int i = 0; i < results.size(); i++)
+      //     {
+      //       float max_element = *std::max_element(results.at(i).begin(), results.at(i).end());
+      //       if (peakSize < max_element)
+      //       {
+      //         peakSize = max_element;
+      //         frequencyBinIndex = i;
+      //         codePhase = std::max_element(results.at(i).begin(), results.at(i).end()) - results.at(i).begin();
+      //       }
+      //     }
+      //     int samplesPerCodeChip = std::round(sampleFreq / codeFreqBasis);
+      //     int excludeRangeIndex1 = codePhase - samplesPerCodeChip;
+      //     int excludeRangeIndex2 = codePhase + samplesPerCodeChip;
+      //     int codePhaseRangeStart{0}, codePhaseRangeEnd{0};
+      //     bool inclusive = true;
+      //     if (excludeRangeIndex1 < 1)
+      //     {
+      //       codePhaseRangeStart = excludeRangeIndex2;
+      //       codePhaseRangeEnd = samplesPerCode + excludeRangeIndex1;
+      //     }
+      //     else if (excludeRangeIndex2 >= samplesPerCode)
+      //     {
+      //       codePhaseRangeStart = excludeRangeIndex2 - samplesPerCode;
+      //       codePhaseRangeEnd = excludeRangeIndex1;
+      //     }
+      //     else
+      //     {
+      //       codePhaseRangeStart = excludeRangeIndex1;
+      //       codePhaseRangeEnd = excludeRangeIndex2;
+      //       inclusive = false;
+      //     }
 
-          float secondPeakSize{0};
+      //     float secondPeakSize{0};
 
-          for (int i = 0; i < samplesPerCode; i++)
-          {
-            if (inclusive && (i >= codePhaseRangeStart && i < codePhaseRangeEnd))
-            {
-              if (secondPeakSize < results.at(frequencyBinIndex).at(i))
-                secondPeakSize = results.at(frequencyBinIndex).at(i);
-            }
-            else if (!inclusive && i < codePhaseRangeStart || i > codePhaseRangeEnd)
-            {
-              if (secondPeakSize < results.at(frequencyBinIndex).at(i))
-                secondPeakSize = results.at(frequencyBinIndex).at(i);
-            }
-          }
+      //     for (int i = 0; i < samplesPerCode; i++)
+      //     {
+      //       if (inclusive && (i >= codePhaseRangeStart && i < codePhaseRangeEnd))
+      //       {
+      //         if (secondPeakSize < results.at(frequencyBinIndex).at(i))
+      //           secondPeakSize = results.at(frequencyBinIndex).at(i);
+      //       }
+      //       else if (!inclusive && i < codePhaseRangeStart || i > codePhaseRangeEnd)
+      //       {
+      //         if (secondPeakSize < results.at(frequencyBinIndex).at(i))
+      //           secondPeakSize = results.at(frequencyBinIndex).at(i);
+      //       }
+      //     }
 
-          if (peakSize / secondPeakSize > 2.5)
-          {
-            std::vector<int> caCode = generateCa(PRN);
-            std::vector<std::complex<float>> xCarrier;
-            xCarrier.reserve(samplesPerCode * 10);
-            float longSignalMean = std::accumulate(lognSignal.begin(), lognSignal.end(), 0.0) / lognSignal.size();
-            for (int i = 0; i < samplesPerCode * 10; i++)
-            {
-              int index = floor(ts * i * codeFreqBasis);
-              int caCodeIndex = index % 1023;
-              xCarrier.push_back(std::complex<float>((lognSignal.at(i + codePhase) - longSignalMean) * caCode.at(caCodeIndex), 0.0));
-            }
+      //     if (peakSize / secondPeakSize > 2.5)
+      //     {
+      //       std::vector<int> caCode = generateCa(PRN);
+      //       std::vector<std::complex<float>> xCarrier;
+      //       xCarrier.reserve(samplesPerCode * 10);
+      //       float longSignalMean = std::accumulate(longSignal.begin(), longSignal.end(), 0.0) / longSignal.size();
+      //       for (int i = 0; i < samplesPerCode * 10; i++)
+      //       {
+      //         int index = floor(ts * i * codeFreqBasis);
+      //         int caCodeIndex = index % 1023;
+      //         xCarrier.push_back(std::complex<float>((longSignal.at(i + codePhase) - longSignalMean) * caCode.at(caCodeIndex), 0.0));
+      //       }
 
-            int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
-            gr::fft::fft_complex_fwd fft_num_pts(fftNumPts, 1);
+      //       int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
+      //       gr::fft::fft_complex_fwd fft_num_pts(fftNumPts, 1);
 
-            std::complex<float> *ptr = fft_num_pts.get_inbuf();
-            memcpy(&ptr[0], xCarrier.data(), sizeof(gr_complex) * samplesPerCode * 10);
-            fft_num_pts.execute();
-            std::vector<std::complex<float>> fftxc(fftNumPts);
-            memcpy(fftxc.data(), fft_num_pts.get_outbuf(), sizeof(gr_complex) * fftNumPts);
-            std::vector<float> fftxcAbs;
-            fftxcAbs.reserve(fftxc.size());
-            for (auto val : fftxc)
-            {
-              fftxcAbs.push_back(std::abs(val));
-            }
+      //       std::complex<float> *ptr = fft_num_pts.get_inbuf();
+      //       memcpy(&ptr[0], xCarrier.data(), sizeof(gr_complex) * samplesPerCode * 10);
+      //       fft_num_pts.execute();
+      //       std::vector<std::complex<float>> fftxc(fftNumPts);
+      //       memcpy(fftxc.data(), fft_num_pts.get_outbuf(), sizeof(gr_complex) * fftNumPts);
+      //       std::vector<float> fftxcAbs;
+      //       fftxcAbs.reserve(fftxc.size());
+      //       for (auto val : fftxc)
+      //       {
+      //         fftxcAbs.push_back(std::abs(val));
+      //       }
 
-            int uniqFftPts = ceil((fftNumPts + 1) / 2);
+      //       int uniqFftPts = ceil((fftNumPts + 1) / 2);
 
-            int fftMaxIndex = std::max_element(fftxcAbs.begin() + 4, fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin() - 4;
-            float carrFreq = fftMaxIndex * sampleFreq / fftNumPts;
+      //       int fftMaxIndex = std::max_element(fftxcAbs.begin() + 4, fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin() - 4;
+      //       float carrFreq = fftMaxIndex * sampleFreq / fftNumPts;
 
-            // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
+      //       // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
 
-            acqResults.push_back(AcqResults(PRN, carrFreq, codePhase, peakSize / secondPeakSize));
-          }
-        }
-        std::sort(acqResults.begin(), acqResults.end(), [](AcqResults a, AcqResults b)
-                  { return (a.peakMetric > b.peakMetric); });
-        auto size = sizeof(AcqResults) * acqResults.size();
-        auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults), size);
-        message_port_pub(pmt::string_to_symbol("acquisition"), pmt);
+      //       acqResults.push_back(AcqResults(PRN, carrFreq, codePhase, peakSize / secondPeakSize));
+      //     }
+      //   }
+      //   std::sort(acqResults.begin(), acqResults.end(), [](AcqResults a, AcqResults b)
+      //             { return (a.peakMetric > b.peakMetric); });
+      //   auto size = sizeof(AcqResults) * acqResults.size();
+      //   auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults), size);
+      //   message_port_pub(pmt::string_to_symbol("acquisition"), pmt);
 
-        doColdStart = false;
-        iterator = 0;
-      }
+      //   doColdStart = false;
+      //   iterator = 0;
+      // }
 
       // Do <+signal processing+>
 
