@@ -19,7 +19,7 @@ namespace gr
     class data_distributor_impl : public data_distributor
     {
     private:
-      bool doColdStart = true;
+      bool distribute = true;
       unsigned int iterator = 0;
       unsigned int samplesToSend{};
       std::vector<float> lognSignal;

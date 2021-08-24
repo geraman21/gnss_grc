@@ -1,5 +1,5 @@
 id: gnss_data_distributor
-label: data_distributor
+label: Data Distributor
 category: '[gnss]'
 
 templates:
@@ -28,13 +28,13 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
-- domain: message
-  id: distribute
-  optional: true
-  hide: false
 - label: in
   dtype: float
   optional: true
+- domain: message
+  id: acquisition
+  optional: true
+  hide: false
 
 outputs:
 - label: out

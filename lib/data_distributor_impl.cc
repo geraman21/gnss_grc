@@ -34,14 +34,18 @@ namespace gr
     {
       lognSignal.reserve(samplesToSend);
       message_port_register_out(pmt::string_to_symbol("data_vector"));
-      message_port_register_in(pmt::string_to_symbol("distribute"));
-      set_msg_handler(pmt::mp("distribute"), [this](const pmt::pmt_t &msg)
+      message_port_register_in(pmt::string_to_symbol("acquisition"));
+      set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg)
                       {
-                        bool data_object = *(reinterpret_cast<const bool *>(pmt::blob_data(msg)));
-                        doColdStart = true;
-                        iterator = 0;
-                        lognSignal.clear();
-                        lognSignal.reserve(samplesToSend);
+                        auto msg_key = pmt::car(msg);
+                        auto mag_val = pmt::cdr(msg);
+                        if (pmt::symbol_to_string(msg_key) == "acq_start")
+                        {
+                          distribute = true;
+                          iterator = 0;
+                          lognSignal.clear();
+                          lognSignal.reserve(samplesToSend);
+                        }
                       });
     }
 
@@ -59,13 +63,13 @@ namespace gr
 
       for (int i = 0; i < noutput_items; i++)
       {
-        if (doColdStart && iterator < samplesToSend)
+        if (distribute && iterator < samplesToSend)
         {
           lognSignal.push_back(in[i]);
           iterator++;
         }
         else if (
-            doColdStart && lognSignal.size() >= samplesToSend)
+            distribute && lognSignal.size() >= samplesToSend)
         {
           auto size = sizeof(float) * lognSignal.size();
           auto pmt = pmt::make_blob(reinterpret_cast<void *>(&lognSignal), size);
@@ -73,7 +77,7 @@ namespace gr
           iterator = 0;
           lognSignal.clear();
           lognSignal.reserve(samplesToSend);
-          doColdStart = false;
+          distribute = false;
         }
         out[i] = in[i];
       }

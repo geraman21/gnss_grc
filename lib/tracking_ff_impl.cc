@@ -44,27 +44,40 @@ namespace gr
             message_port_register_in(pmt::string_to_symbol("acquisition"));
             set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg)
                             {
-                                std::vector<AcqResults> data_object = *(reinterpret_cast<const std::vector<AcqResults> *>(pmt::blob_data(msg)));
-                                // if (data_object.size() > channelNum && (PRN == 0 || PRN != data_object.at(channelNum).PRN))
-                                if (data_object.size() > channelNum && PRN == 0)
+                                auto msg_key = pmt::car(msg);
+                                auto mag_val = pmt::cdr(msg);
+                                if (pmt::symbol_to_string(msg_key) == "acq_start")
                                 {
-                                    // reset();
-                                    codeFreq = 1023000;
-                                    codePhaseStep = codeFreq * samplePeriod;
-                                    blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
-                                    channel = new Channel(data_object.at(channelNum).PRN, data_object.at(channelNum).carrFreq, data_object.at(channelNum).codePhase, 'T');
-                                    float totalSamplesFromStart = totalSamples - channel->codePhase;
-                                    float fullMsPassed = ceil(totalSamplesFromStart / blksize);
-                                    codePhase = fullMsPassed * blksize - totalSamplesFromStart;
-                                    carrFreq = channel->acquiredFreq;
-                                    carrFreqBasis = channel->acquiredFreq;
-                                    PRN = data_object.at(channelNum).PRN;
-                                    caCode = generateCa(channel->prn);
-                                    caCode.insert(caCode.begin(), caCode.back());
-                                    caCode.push_back(caCode.at(1));
-                                    delete (channel);
-                                    std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
-                                    performTracking = true;
+                                    auto recChannelNumber = pmt::to_long(mag_val);
+                                    if (recChannelNumber == channelNum)
+                                    {
+                                        // Reset count of totalSamples to correctly adjust codePhase received from acquisition
+                                        totalSamples = 0;
+                                    }
+                                }
+                                else if (pmt::symbol_to_string(msg_key) == "acq_result")
+                                {
+                                    AcqResults acqResult = *(reinterpret_cast<const AcqResults *>(pmt::blob_data(mag_val)));
+                                    if (acqResult.channelNumber == channelNum)
+                                    {
+                                        // reset();
+                                        codeFreq = 1023000;
+                                        codePhaseStep = codeFreq * samplePeriod;
+                                        blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
+                                        channel = new Channel(acqResult.PRN, acqResult.carrFreq, acqResult.codePhase, 'T');
+                                        float totalSamplesFromStart = totalSamples - channel->codePhase;
+                                        float fullMsPassed = ceil(totalSamplesFromStart / blksize);
+                                        codePhase = fullMsPassed * blksize - totalSamplesFromStart;
+                                        carrFreq = channel->acquiredFreq;
+                                        carrFreqBasis = channel->acquiredFreq;
+                                        PRN = acqResult.PRN;
+                                        caCode = generateCa(channel->prn);
+                                        caCode.insert(caCode.begin(), caCode.back());
+                                        caCode.push_back(caCode.at(1));
+                                        delete (channel);
+                                        performTracking = true;
+                                        // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
+                                    }
                                 }
                             });
             // channel = new Channel(15, 9.54992e+06, 36320, 'T');
@@ -82,6 +95,7 @@ namespace gr
         tracking_ff_impl::~tracking_ff_impl() {}
         void tracking_ff_impl::reset()
         {
+            performTracking = false;
             remCodePhase = 0.0;
             remCarrPhase = 0.0;
             oldCarrNco = 0.0;
@@ -97,7 +111,6 @@ namespace gr
                                    gr_vector_const_void_star &input_items,
                                    gr_vector_void_star &output_items)
         {
-
             const input_type *in = reinterpret_cast<const input_type *>(input_items[0]);
             output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
@@ -113,11 +126,6 @@ namespace gr
             {
                 if (performTracking)
                 {
-                    if (test == 0)
-                    {
-                        std::cout << "TEST is 0  Iterator count is:  " << i << std::endl;
-                        test++;
-                    }
                     if (codePhase > 0)
                         codePhase--;
 

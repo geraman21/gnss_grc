@@ -15,10 +15,12 @@ class AcqResults
 
 public:
     AcqResults(int _PRN, float _carrFreq, float _codePhase, float _peakMetric);
-    float carrFreq;
-    float codePhase;
-    float peakMetric;
-    int PRN;
+    AcqResults();
+    float carrFreq{};
+    float codePhase{};
+    float peakMetric{};
+    int PRN{};
+    int channelNumber{};
 };
 
 #endif /* INCLUDED_GNSS_TRACKING_FF_IMPL_H */

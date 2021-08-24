@@ -30,14 +30,15 @@ namespace py = pybind11;
 void bind_acquisition(py::module &m)
 {
 
-    using acquisition = gr::gnss::acquisition;
+     using acquisition = gr::gnss::acquisition;
 
-    py::class_<acquisition, gr::block, gr::basic_block,
-               std::shared_ptr<acquisition>>(m, "acquisition", D(acquisition))
+     py::class_<acquisition, gr::block, gr::basic_block,
+                std::shared_ptr<acquisition>>(m, "acquisition", D(acquisition))
 
-        .def(py::init(&acquisition::make),
-             py::arg("a_sampleFreq"),
-             D(acquisition, make))
+         .def(py::init(&acquisition::make),
+              py::arg("a_sampleFreq"),
+              py::arg("a_channelNum"),
+              D(acquisition, make))
 
-        ;
+         ;
 }

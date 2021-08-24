@@ -22,6 +22,7 @@ namespace gr
     class acquisition_impl : public acquisition
     {
     private:
+      int channelNum{};
       bool doColdStart = true;
       float sampleFreq;
       double ts;
@@ -39,9 +40,10 @@ namespace gr
       std::vector<float> longSignal;
       std::vector<std::vector<float>> results;
       std::vector<AcqResults> acqResults;
+      AcqResults performAcquisition(int PRN);
 
     public:
-      acquisition_impl(float a_sampleFreq);
+      acquisition_impl(float a_sampleFreq, int a_channelNum);
       acquisition_impl();
       ~acquisition_impl();
 

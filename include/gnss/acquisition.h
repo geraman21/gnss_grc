@@ -34,7 +34,7 @@ namespace gr
    * class. gnss::acquisition::make is the public interface for
    * creating new instances.
    */
-      static sptr make(float a_sampleFreq);
+      static sptr make(float a_sampleFreq, int a_channelNum);
     };
 
   } // namespace gnss
