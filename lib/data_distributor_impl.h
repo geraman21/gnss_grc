@@ -19,10 +19,12 @@ namespace gr
     class data_distributor_impl : public data_distributor
     {
     private:
+      unsigned long int test;
       bool distribute = true;
       unsigned int iterator = 0;
       unsigned int samplesToSend{};
       std::vector<float> lognSignal;
+      unsigned long int counter{};
 
     public:
       data_distributor_impl(unsigned int numSamples);

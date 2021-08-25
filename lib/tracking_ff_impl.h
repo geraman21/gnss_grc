@@ -22,9 +22,9 @@ namespace gr
         class tracking_ff_impl : public tracking_ff
         {
         private:
-            int test = 0;
+            unsigned long int test = 0;
             // Nothing to declare in this block.
-            double totalSamples{};
+            unsigned long int totalSamples{};
             int PRN{};
             float peakMetric{};
             int channelNum;
@@ -46,7 +46,6 @@ namespace gr
             float dllCorrelatorSpacing = 0.5;
             float output = 0;
             int codeLength = 1023;
-            std::vector<float> buffer;
             float remCarrPhase = 0;
             float remCodePhase = 0;
             float PDI = 0.001;

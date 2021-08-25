@@ -52,6 +52,7 @@ namespace gr
                                     if (recChannelNumber == channelNum)
                                     {
                                         // Reset count of totalSamples to correctly adjust codePhase received from acquisition
+                                        std::cout << "TRACKING == " << test << std::endl;
                                         totalSamples = 0;
                                     }
                                 }
@@ -60,7 +61,9 @@ namespace gr
                                     AcqResults acqResult = *(reinterpret_cast<const AcqResults *>(pmt::blob_data(mag_val)));
                                     if (acqResult.channelNumber == channelNum)
                                     {
-                                        // reset();
+                                        // std::cout << "TRACKING  total samples:  " << totalSamples << std::endl;
+                                        reset();
+                                        performTracking = false;
                                         codeFreq = 1023000;
                                         codePhaseStep = codeFreq * samplePeriod;
                                         blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
@@ -104,6 +107,7 @@ namespace gr
             oldCodeError = 0.0;
             carrFreq = 0.0;
             codeFreq = 1023000;
+            iterator = 0;
             Q_E = I_E = Q_P = I_P = Q_L = I_L = 0.0;
         }
 
@@ -114,8 +118,6 @@ namespace gr
             const input_type *in = reinterpret_cast<const input_type *>(input_items[0]);
             output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
-            totalSamples += noutput_items;
-
             // Declare Early Late and Prompt code variables and their starting points
             float tStartEarly = remCodePhase - earlyLateSpc;
             float tStartLate = remCodePhase + earlyLateSpc;
@@ -124,11 +126,14 @@ namespace gr
 
             for (int i = 0; i < noutput_items; i++)
             {
+                test = i;
+
+                totalSamples++;
+
                 if (performTracking)
                 {
                     if (codePhase > 0)
                         codePhase--;
-
                     if (codePhase == 0)
                     {
                         float iteratorStep = codePhaseStep * iterator;

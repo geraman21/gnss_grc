@@ -42,9 +42,15 @@ namespace gr
                         if (pmt::symbol_to_string(msg_key) == "acq_start")
                         {
                           distribute = true;
+                          // distributeFromNextWorkCall = true;
                           iterator = 0;
+                          test = 0;
                           lognSignal.clear();
                           lognSignal.reserve(samplesToSend);
+                        }
+                        else
+                        {
+                          std::cout << "DISTRIBUTOR == " << test << std::endl;
                         }
                       });
     }
@@ -63,6 +69,17 @@ namespace gr
 
       for (int i = 0; i < noutput_items; i++)
       {
+        test = i;
+
+        counter++;
+        if (counter == 18000 * 38192)
+        {
+          distribute = true;
+          iterator = 0;
+          lognSignal.clear();
+          lognSignal.reserve(samplesToSend);
+        }
+
         if (distribute && iterator < samplesToSend)
         {
           lognSignal.push_back(in[i]);

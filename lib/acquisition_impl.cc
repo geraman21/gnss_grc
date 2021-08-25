@@ -68,20 +68,25 @@ namespace gr
                         {
                           if (acqResults.size() > 0)
                           {
-                            std::cout << "Acquiring for PRN:  " << acqResults.front().PRN << std::endl;
+                            // std::cout << "Acquiring for PRN:  " << acqResults.front().PRN << "    channel strength:   " << acqResults.front().peakMetric << std::endl;
                             AcqResults channelAcqResult = performAcquisition(acqResults.front().PRN);
+                            channelAcqResult.channelNumber = channelNum - acqResults.size();
                             if (channelAcqResult.PRN != 0)
                             {
-                              channelAcqResult.channelNumber = channelNum - acqResults.size();
-                              acqResults.erase(acqResults.begin());
-                              std::cout << "Acquisition Result Delivered:   Channel Number:   "
-                                        << channelAcqResult.channelNumber << "    PRN: " << channelAcqResult.PRN << "   CarrFreq: " << channelAcqResult.carrFreq << ", CodePhase: " << channelAcqResult.codePhase << std::endl;
                               auto size = sizeof(AcqResults);
                               auto pmt = pmt::make_blob(reinterpret_cast<void *>(&channelAcqResult), size);
                               message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
-
-                              // Notify next channel that Acquisition data for it is now being collected
+                              // std::cout << "Acquisition Result Delivered:   Channel Number:   "
+                              //           << channelAcqResult.channelNumber << "    PRN: " << channelAcqResult.PRN << "   CarrFreq: " << channelAcqResult.carrFreq << ", CodePhase: " << channelAcqResult.codePhase << std::endl;
+                            }
+                            acqResults.erase(acqResults.begin());
+                            // Notify next channel that Acquisition data for it is now being collected
+                            if (acqResults.size() > 0)
                               message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_start"), pmt::from_long(channelAcqResult.channelNumber + 1)));
+                            else
+                            {
+                              doColdStart = true;
+                              std::cout << "Acquisition is finished" << std::endl;
                             }
                           }
                           else
