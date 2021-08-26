@@ -141,7 +141,8 @@ namespace gr
                     if (doTracking)
                     {
                         float iteratorStep = codePhaseStep * iterator;
-
+                        if (isnan(iteratorStep))
+                            continue;
                         // Generate Early CA Code.
                         int earlyCode{}, lateCode{}, promptCode{};
 
