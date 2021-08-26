@@ -86,6 +86,23 @@ std::vector<int> generateCa(int prn, int chip_shift)
     return dest;
 }
 
+void makePaddedCaTable(std::vector<std::vector<int>> &table)
+{
+    for (int i = 0; i <= 32; i++)
+    {
+        if (i == 0)
+        {
+            table.push_back(std::vector<int>(1025, 0));
+        }
+        else
+        {
+            table.push_back(generateCa(i));
+            table.at(i).insert(table.at(i).begin(), table.at(i).back());
+            table.at(i).push_back(table.at(i).at(1));
+        }
+    }
+};
+
 std::vector<std::vector<float>> makeCaTable(int samplesPerCode)
 {
     float codePhaseStep = 1023.0 / samplesPerCode;

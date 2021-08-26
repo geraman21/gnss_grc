@@ -52,7 +52,7 @@ namespace gr
                                     if (recChannelNumber == channelNum)
                                     {
                                         // Reset count of totalSamples to correctly adjust codePhase received from acquisition
-                                        std::cout << "TRACKING == " << test << std::endl;
+                                        // std::cout << "TRACKING == " << test << std::endl;
                                         totalSamples = 0;
                                     }
                                 }
@@ -62,28 +62,25 @@ namespace gr
                                     if (acqResult.channelNumber == channelNum)
                                     {
                                         // std::cout << "TRACKING  total samples:  " << totalSamples << std::endl;
-                                        reset();
-                                        performTracking = false;
+
                                         codeFreq = 1023000;
                                         codePhaseStep = codeFreq * samplePeriod;
-                                        blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
-                                        channel = new Channel(acqResult.PRN, acqResult.carrFreq, acqResult.codePhase, 'T');
-                                        float totalSamplesFromStart = totalSamples - channel->codePhase;
+                                        blksize = ceil(codeLength / codePhaseStep);
+
+                                        float totalSamplesFromStart = totalSamples - acqResult.codePhase;
                                         float fullMsPassed = ceil(totalSamplesFromStart / blksize);
                                         codePhase = fullMsPassed * blksize - totalSamplesFromStart;
-                                        carrFreq = channel->acquiredFreq;
-                                        carrFreqBasis = channel->acquiredFreq;
+                                        doTracking = false;
+                                        carrFreq = acqResult.carrFreq;
+                                        carrFreqBasis = acqResult.carrFreq;
                                         PRN = acqResult.PRN;
-                                        caCode = generateCa(channel->prn);
-                                        caCode.insert(caCode.begin(), caCode.back());
-                                        caCode.push_back(caCode.at(1));
-                                        delete (channel);
-                                        performTracking = true;
                                         // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase << std::endl;
                                     }
                                 }
                             });
-            // channel = new Channel(15, 9.54992e+06, 36320, 'T');
+
+            paddedCaTable.reserve(33);
+            makePaddedCaTable(paddedCaTable);
             codePhaseStep = codeFreq * samplePeriod;
             blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
             calcloopCoef(
@@ -98,7 +95,6 @@ namespace gr
         tracking_ff_impl::~tracking_ff_impl() {}
         void tracking_ff_impl::reset()
         {
-            performTracking = false;
             remCodePhase = 0.0;
             remCarrPhase = 0.0;
             oldCarrNco = 0.0;
@@ -123,29 +119,39 @@ namespace gr
             float tStartLate = remCodePhase + earlyLateSpc;
             float tStartPrompt = remCodePhase;
             float tEndPrompt = blksize * codePhaseStep + remCodePhase;
-
             for (int i = 0; i < noutput_items; i++)
             {
                 test = i;
 
                 totalSamples++;
 
-                if (performTracking)
+                if (true)
                 {
-                    if (codePhase > 0)
-                        codePhase--;
-                    if (codePhase == 0)
+                    if (!doTracking && PRN != 0)
+                    {
+                        if (codePhase > 0)
+                            codePhase--;
+                        if (codePhase == 0)
+                        {
+                            reset();
+                            doTracking = true;
+                        }
+                    }
+
+                    if (doTracking)
                     {
                         float iteratorStep = codePhaseStep * iterator;
 
                         // Generate Early CA Code.
-                        int earlyCode = caCode.at(std::ceil(tStartEarly + iteratorStep));
+                        int earlyCode{}, lateCode{}, promptCode{};
+
+                        earlyCode = paddedCaTable.at(PRN).at(std::ceil(tStartEarly + iteratorStep));
 
                         // Generate Late CA Code.
-                        int lateCode = caCode.at(std::ceil(tStartLate + iteratorStep));
+                        lateCode = paddedCaTable.at(PRN).at(std::ceil(tStartLate + iteratorStep));
 
                         // Generate Prompt CA Code.
-                        int promptCode = caCode.at(std::ceil(tStartPrompt + iteratorStep));
+                        promptCode = paddedCaTable.at(PRN).at(std::ceil(tStartPrompt + iteratorStep));
 
                         float trigArg =
                             (carrFreq * 2 * M_PI * (iterator * samplePeriod)) + remCarrPhase;
@@ -175,8 +181,7 @@ namespace gr
                                       (2 * M_PI));
 
                             // Update remaining Code Phase once per ms
-                            remCodePhase = tEndPrompt + codePhase - 1023;
-
+                            remCodePhase = tEndPrompt - 1023.0;
                             //  Find PLL error and update carrier NCO
                             //  Implement carrier loop discriminator (phase detector)
                             float carrError = atan(Q_P / I_P) / (2.0 * M_PI);

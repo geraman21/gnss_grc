@@ -50,7 +50,7 @@ namespace gr
                         }
                         else
                         {
-                          std::cout << "DISTRIBUTOR == " << test << std::endl;
+                          // std::cout << "DISTRIBUTOR == " << test << std::endl;
                         }
                       });
     }
