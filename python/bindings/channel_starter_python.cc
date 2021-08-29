@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(acquisition.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(e9b379220b8e3fa216f9e80a2769a04f)                     */
+/* BINDTOOL_HEADER_FILE(channel_starter.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(8860039f096c1bce26d22918e8fd57c6)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,19 +23,19 @@
 
 namespace py = pybind11;
 
-#include <gnss/acquisition.h>
+#include <gnss/channel_starter.h>
 // pydoc.h is automatically generated in the build directory
-#include <acquisition_pydoc.h>
+#include <channel_starter_pydoc.h>
 
-void bind_acquisition(py::module &m) {
+void bind_channel_starter(py::module &m) {
 
-  using acquisition = gr::gnss::acquisition;
+  using channel_starter = gr::gnss::channel_starter;
 
-  py::class_<acquisition, gr::block, gr::basic_block, std::shared_ptr<acquisition>>(
-      m, "acquisition", D(acquisition))
+  py::class_<channel_starter, gr::block, gr::basic_block, std::shared_ptr<channel_starter>>(
+      m, "channel_starter", D(channel_starter))
 
-      .def(py::init(&acquisition::make), py::arg("a_sampleFreq"), py::arg("a_channelNum"),
-           D(acquisition, make))
+      .def(py::init(&channel_starter::make), py::arg("attempts"), py::arg("s_sampleFreq"),
+           D(channel_starter, make))
 
       ;
 }

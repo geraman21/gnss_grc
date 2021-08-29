@@ -26,6 +26,7 @@ namespace py = pybind11;
     void bind_nav_solution(py::module& m);
     void bind_acquisition(py::module& m);
     void bind_data_distributor(py::module& m);
+    void bind_channel_starter(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 
@@ -59,5 +60,6 @@ PYBIND11_MODULE(gnss_python, m)
     bind_nav_solution(m);
     bind_acquisition(m);
     bind_data_distributor(m);
+    bind_channel_starter(m);
     // ) END BINDING_FUNCTION_CALLS
 }

@@ -15,5 +15,6 @@ install(FILES
     nav_decoding.h
     nav_solution.h
     acquisition.h
-    data_distributor.h DESTINATION include/gnss
+    data_distributor.h
+    channel_starter.h DESTINATION include/gnss
 )

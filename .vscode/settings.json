@@ -73,5 +73,6 @@
         "dense": "cpp",
         "geometry": "cpp"
     },
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "C_Cpp.clang_format_fallbackStyle": "{ ColumnLimit: 100 }",
 }

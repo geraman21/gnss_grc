@@ -1,15 +1,12 @@
+#include "acqResults.h"
 #include "ephemeris.h"
-#include <deque>
-#include <vector>
 #include <complex>
+#include <deque>
 #include <valarray>
+#include <vector>
 
-void calcloopCoef(float &coeff1,
-                  float &coeff2,
-                  short loopNoiseBandwidth,
-                  float zeta,
-                  float loopGain,
-                  float pdi);
+void calcloopCoef(float &coeff1, float &coeff2, short loopNoiseBandwidth, float zeta,
+                  float loopGain, float pdi);
 
 std::vector<float> linspace(float start_in, float end_in, int num_in);
 
@@ -24,13 +21,14 @@ unsigned int bin2dec(std::vector<int> vec);
 int twosComp2dec(std::vector<int> vec);
 
 std::vector<int> vecSelector(std::vector<int> &source, int start, int end);
-std::vector<int>
-vecSelector(std::vector<int> &source, int start, int end, int start1, int end1);
+std::vector<int> vecSelector(std::vector<int> &source, int start, int end, int start1, int end1);
 
 void printEphemeris(Ephemeris *ephResults);
 
-std::vector<float>
-getPseudoRanges(std::vector<const void *> &data, int index, float startOffset, long int c);
+std::vector<float> getPseudoRanges(std::vector<const void *> &data, int index, float startOffset,
+                                   long int c);
 
 void custom_fft(std::valarray<std::complex<double>> &x);
 void custom_ifft(std::valarray<std::complex<double>> &x);
+AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
+                              std::vector<float> &longSignal);
