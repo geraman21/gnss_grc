@@ -32,3 +32,5 @@ void custom_fft(std::valarray<std::complex<double>> &x);
 void custom_ifft(std::valarray<std::complex<double>> &x);
 AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
                               std::vector<float> &longSignal);
+AcqResults checkIfChannelPresent(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
+                                 std::vector<float> &longSignal);

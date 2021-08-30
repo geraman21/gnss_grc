@@ -70,7 +70,8 @@ private:
   float tau1carr, tau2carr;
   float tau1code, tau2code;
   void reset();
-  void handleAcqResult(AcqResults acqResult);
+  void handleAcqStart(AcqResults acqResult);
+  void startReaquisition();
 
 public:
   tracking_ff_impl(int _channelNum, float _sampleFreq);

@@ -44,12 +44,12 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
     auto msg_val = pmt::cdr(msg);
     AcqResults acqResult = *(reinterpret_cast<const AcqResults *>(pmt::blob_data(msg_val)));
     if (pmt::symbol_to_string(msg_key) == "acq_result" && acqResult.channelNumber == channelNum) {
-
-      handleAcqResult(acqResult);
+      PRN = acqResult.PRN;
+      startReaquisition();
     } else if (pmt::symbol_to_string(msg_key) == "acq_start") {
-      handleAcqResult(acqResult);
-      // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " <<
-      // codePhase << std::endl;
+      handleAcqStart(acqResult);
+      // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase
+      //           << std::endl;
     }
   });
   longSignal.reserve(11000 * samplesPerCode);
@@ -66,7 +66,7 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
  * Our virtual destructor.
  */
 tracking_ff_impl::~tracking_ff_impl() {}
-void tracking_ff_impl::handleAcqResult(AcqResults acqResult) {
+void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   codeFreq = codeFreqBasis;
   codePhaseStep = codeFreq * samplePeriod;
   blksize = ceil(codeLength / codePhaseStep);
@@ -77,6 +77,13 @@ void tracking_ff_impl::handleAcqResult(AcqResults acqResult) {
   carrFreq = acqResult.carrFreq;
   carrFreqBasis = acqResult.carrFreq;
   PRN = acqResult.PRN;
+}
+
+void tracking_ff_impl::startReaquisition() {
+  restartAcquisition = true;
+  collectSamples = true;
+  doTracking = false;
+  totalSamples = 0;
 }
 void tracking_ff_impl::reset() {
   remCodePhase = 0.0;
@@ -101,10 +108,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
   if (msCount >= msForQualityCheck + 200) {
     if (signChangeCount > msForQualityCheck / 20) {
       std::cout << "PRN:  " << PRN << "  Quality Check failed, restarting..." << std::endl;
-      restartAcquisition = true;
-      collectSamples = true;
-      doTracking = false;
-      totalSamples = 0;
+      startReaquisition();
     }
     msCount = 0;
     signChangeCount = 0;

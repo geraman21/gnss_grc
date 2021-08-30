@@ -32,7 +32,6 @@ data_distributor_impl::data_distributor_impl(unsigned int numSamples)
     auto msg_key = pmt::car(msg);
     auto mag_val = pmt::cdr(msg);
     if (pmt::symbol_to_string(msg_key) == "acq_start") {
-      std::cout << "DISTRIBUTOR == " << test << std::endl;
       distribute = true;
 
       iterator = 0;
@@ -56,9 +55,7 @@ int data_distributor_impl::work(int noutput_items, gr_vector_const_void_star &in
   output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
   for (int i = 0; i < noutput_items; i++) {
-    test = i;
 
-    counter++;
     // if (counter == 18000 * 38192)
     // {
     //   distribute = true;
