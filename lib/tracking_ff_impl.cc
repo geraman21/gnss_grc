@@ -163,11 +163,38 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
       float trigArg = (carrFreq * 2 * M_PI * (iterator * samplePeriod)) + remCarrPhase;
 
-      float carrSin;
-      float carrCos;
-      sincosf(trigArg, &carrSin, &carrCos);
-      float qSignal = in[i] * carrCos;
-      float iSignal = in[i] * carrSin;
+      // float sina{};
+      // float cosa{};
+      // sincosf(a, &sina, &cosa);
+      // float resSin{};
+      // float resCos{};
+
+      // for (int k = 0; k < 5; k++) {
+      //   if (k == 0) {
+      //     sincosf(b, &resSin, &resCos);
+      //   } else {
+      //     float newResCos, newResSin;
+      //     newResCos = cosa * resCos - sina * resSin;
+      //     newResSin = sina * resCos + cosa * resSin;
+      //     resCos = newResCos;
+      //     resSin = newResSin;
+      //   }
+      // }
+
+      if (iterator == 0) {
+        a = carrFreq * 2 * M_PI * samplePeriod;
+        b = remCarrPhase;
+        sincosf(a, &sina, &cosa);
+        sincosf(b, &resSin, &resCos);
+      }
+      float newResCos, newResSin;
+      newResCos = cosa * resCos - sina * resSin;
+      newResSin = sina * resCos + cosa * resSin;
+      resCos = newResCos;
+      resSin = newResSin;
+
+      float qSignal = in[i] * resCos;
+      float iSignal = in[i] * resSin;
 
       Q_E += earlyCode * qSignal;
       I_E += earlyCode * iSignal;

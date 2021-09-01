@@ -5,6 +5,8 @@
 #include <valarray>
 #include <vector>
 
+double fast_sin(double x);
+
 void calcloopCoef(float &coeff1, float &coeff2, short loopNoiseBandwidth, float zeta,
                   float loopGain, float pdi);
 

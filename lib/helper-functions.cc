@@ -12,6 +12,61 @@
 #include <valarray>
 #include <vector>
 
+double fast_sin(double x) {
+  int k;
+  double y;
+  double z;
+
+  z = x;
+  z *= 0.3183098861837907;
+  z += 6755399441055744.0;
+  k = *((int *)&z);
+  z = k;
+  z *= 3.1415926535897932;
+  x -= z;
+  y = x;
+  y *= x;
+  z = 0.0073524681968701;
+  z *= y;
+  z -= 0.1652891139701474;
+  z *= y;
+  z += 0.9996919862959676;
+  x *= z;
+  k &= 1;
+  k += k;
+  z = k;
+  z *= x;
+  x -= z;
+
+  return x;
+}
+
+// float fast_sin(float x) {
+//   float sin = 0;
+//   if (x < -3.14159265f)
+//     x += 6.28318531f;
+//   else if (x > 3.14159265f)
+//     x -= 6.28318531f;
+
+//   if (x < 0) {
+//     sin = x * (1.27323954f + 0.405284735f * x);
+
+//     if (sin < 0)
+//       sin = sin * (-0.255f * (sin + 1) + 1);
+//     else
+//       sin = sin * (0.255f * (sin - 1) + 1);
+//   } else {
+//     sin = x * (1.27323954f - 0.405284735f * x);
+
+//     if (sin < 0)
+//       sin = sin * (-0.255f * (sin + 1) + 1);
+//     else
+//       sin = sin * (0.255f * (sin - 1) + 1);
+//   }
+
+//   return sin;
+// }
+
 void calcloopCoef(float &coeff1, float &coeff2, short loopNoiseBandwidth, float zeta,
                   float loopGain, float pdi) {
 
