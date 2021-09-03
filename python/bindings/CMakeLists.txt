@@ -33,7 +33,8 @@ list(APPEND gnss_python_files
     nav_solution_python.cc
     acquisition_python.cc
     data_distributor_python.cc
-    channel_starter_python.cc python_bindings.cc)
+    channel_starter_python.cc
+    ephemerides_python.cc python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(gnss 
    ../..

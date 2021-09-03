@@ -4,7 +4,7 @@ category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.nav_decoding(${channelNum}, ${codePhase})
+  make: gnss.nav_decoding(${channelNum})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -16,10 +16,7 @@ parameters:
   label: Channel Number (0-7)
   dtype: int
   value: 0
-- id: codePhase
-  label: Code Phases
-  dtype: int
-  value: 0
+
 #- id: ...
 #  label: ...
 #  dtype: ...
@@ -32,6 +29,10 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
+- domain: message
+  id: channel_info
+  optional: true
+  hide: false
 - label: in
   dtype: float
   optional: false
@@ -42,7 +43,7 @@ outputs:
   dtype: float
   optional: true
 - domain: message
-  id: ephemeris
+  id: nav_bits
   optional: true
   hide: false
 

@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(1)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(data_distributor.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(dd57b10ab717c81b895e2330b9f247e3)                     */
+/* BINDTOOL_HEADER_FILE(ephemerides.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(41f7e6497e55d8a44620d946a7ae36c6)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,18 +23,18 @@
 
 namespace py = pybind11;
 
-#include <gnss/data_distributor.h>
+#include <gnss/ephemerides.h>
 // pydoc.h is automatically generated in the build directory
-#include <data_distributor_pydoc.h>
+#include <ephemerides_pydoc.h>
 
-void bind_data_distributor(py::module &m) {
+void bind_ephemerides(py::module &m) {
 
-  using data_distributor = gr::gnss::data_distributor;
+  using ephemerides = gr::gnss::ephemerides;
 
-  py::class_<data_distributor, gr::sync_block, gr::block, gr::basic_block,
-             std::shared_ptr<data_distributor>>(m, "data_distributor", D(data_distributor))
+  py::class_<ephemerides, gr::block, gr::basic_block, std::shared_ptr<ephemerides>>(
+      m, "ephemerides", D(ephemerides))
 
-      .def(py::init(&data_distributor::make), py::arg("numSamples"), D(data_distributor, make))
+      .def(py::init(&ephemerides::make), D(ephemerides, make))
 
       ;
 }

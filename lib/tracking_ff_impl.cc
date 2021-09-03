@@ -39,6 +39,7 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
   // channel = new Channel(21, 9547426.34201050, 13404, 'T');
   message_port_register_in(pmt::string_to_symbol("acquisition"));
   message_port_register_out(pmt::string_to_symbol("data_vector"));
+  message_port_register_out(pmt::string_to_symbol("channel_info"));
   set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg) {
     auto msg_key = pmt::car(msg);
     auto msg_val = pmt::cdr(msg);
@@ -48,8 +49,6 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
       startReaquisition();
     } else if (pmt::symbol_to_string(msg_key) == "acq_start") {
       handleAcqStart(acqResult);
-      // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ", CodePhase: " << codePhase
-      //           << std::endl;
     }
   });
   longSignal.reserve(11000 * samplesPerCode);
@@ -73,10 +72,15 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   restartAcquisition = false;
   float totalSamplesFromStart = totalSamples - acqResult.codePhase;
   float fullMsPassed = ceil(totalSamplesFromStart / blksize);
-  codePhase = fullMsPassed * blksize - totalSamplesFromStart;
+  receivedCodePhase = fullMsPassed * blksize - totalSamplesFromStart;
+  codePhase = receivedCodePhase;
+  std::cout << "Tracking codePhase:  " << (receivedCodePhase * 1.0) / samplesPerCode << std::endl;
   carrFreq = acqResult.carrFreq;
   carrFreqBasis = acqResult.carrFreq;
   PRN = acqResult.PRN;
+  message_port_pub(
+      pmt::mp("channel_info"),
+      pmt::cons(pmt::from_long(PRN), pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode)));
 }
 
 void tracking_ff_impl::startReaquisition() {
@@ -163,24 +167,6 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
       float trigArg = (carrFreq * 2 * M_PI * (iterator * samplePeriod)) + remCarrPhase;
 
-      // float sina{};
-      // float cosa{};
-      // sincosf(a, &sina, &cosa);
-      // float resSin{};
-      // float resCos{};
-
-      // for (int k = 0; k < 5; k++) {
-      //   if (k == 0) {
-      //     sincosf(b, &resSin, &resCos);
-      //   } else {
-      //     float newResCos, newResSin;
-      //     newResCos = cosa * resCos - sina * resSin;
-      //     newResSin = sina * resCos + cosa * resSin;
-      //     resCos = newResCos;
-      //     resSin = newResSin;
-      //   }
-      // }
-
       if (iterator == 0) {
         a = carrFreq * 2 * M_PI * samplePeriod;
         b = remCarrPhase;
@@ -213,6 +199,14 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         // Update output value to I_P
         output = I_P;
 
+        if (sendTag) {
+          tag_t tag;
+          tag.offset = nitems_written(0) + i;
+          tag.key = pmt::mp("code_phase");
+          tag.value = pmt::from_long(receivedCodePhase);
+          add_item_tag(0, tag);
+          sendTag = false;
+        }
         remCarrPhase =
             fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase), (2 * M_PI));
 
@@ -253,7 +247,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         iterator++;
       }
     }
-    out[i] = output;
+    out[i] = output ? output : 0;
   }
 
   // Tell runtime system how many output items we produced.

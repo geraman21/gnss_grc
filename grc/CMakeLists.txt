@@ -11,5 +11,6 @@ install(FILES
     gnss_nav_solution.block.yml
     gnss_acquisition.block.yml
     gnss_data_distributor.block.yml
-    gnss_channel_starter.block.yml DESTINATION share/gnuradio/grc/blocks
+    gnss_channel_starter.block.yml
+    gnss_ephemerides.block.yml DESTINATION share/gnuradio/grc/blocks
 )

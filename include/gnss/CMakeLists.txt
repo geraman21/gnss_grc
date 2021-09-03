@@ -16,5 +16,6 @@ install(FILES
     nav_solution.h
     acquisition.h
     data_distributor.h
-    channel_starter.h DESTINATION include/gnss
+    channel_starter.h
+    ephemerides.h DESTINATION include/gnss
 )

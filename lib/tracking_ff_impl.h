@@ -33,12 +33,14 @@ private:
   int msForQualityCheck = 1000;
   int msCount{};
   int signChangeCount{};
+  bool sendTag = false;
   // for sin cos calculations
   float a, b, sina, cosa, resSin, resCos;
   float I_E{0}, Q_E{0}, Q_P{0}, I_P{0}, I_L{0}, Q_L{0};
   int iterator = 0;
   int blksize{};
   int codePhase{};
+  int receivedCodePhase{};
   float carrFreq;
   float carrFreqBasis;
   std::vector<std::vector<int>> paddedCaTable;
