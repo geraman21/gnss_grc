@@ -19,7 +19,7 @@ class channel_starter_impl : public channel_starter {
 private:
   int PRN;
   int attemptsNum;
-  int attemptsLeft;
+  std::vector<int> attemptsLeft;
   float sampleFreq;
   float ts;
   float codeFreqBasis = 1023000;

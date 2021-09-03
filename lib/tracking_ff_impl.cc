@@ -48,7 +48,8 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
       PRN = acqResult.PRN;
       startReaquisition();
     } else if (pmt::symbol_to_string(msg_key) == "acq_start") {
-      handleAcqStart(acqResult);
+      if (PRN == acqResult.PRN)
+        handleAcqStart(acqResult);
     }
   });
   longSignal.reserve(11000 * samplesPerCode);
