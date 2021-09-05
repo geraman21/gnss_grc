@@ -39,7 +39,6 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
   // channel = new Channel(21, 9547426.34201050, 13404, 'T');
   message_port_register_in(pmt::string_to_symbol("acquisition"));
   message_port_register_out(pmt::string_to_symbol("data_vector"));
-  message_port_register_out(pmt::string_to_symbol("channel_info"));
   set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg) {
     auto msg_key = pmt::car(msg);
     auto msg_val = pmt::cdr(msg);
@@ -79,9 +78,6 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   carrFreq = acqResult.carrFreq;
   carrFreqBasis = acqResult.carrFreq;
   PRN = acqResult.PRN;
-  message_port_pub(
-      pmt::mp("channel_info"),
-      pmt::cons(pmt::from_long(PRN), pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode)));
 }
 
 void tracking_ff_impl::startReaquisition() {
@@ -200,14 +196,6 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         // Update output value to I_P
         output = I_P;
 
-        if (sendTag) {
-          tag_t tag;
-          tag.offset = nitems_written(0) + i;
-          tag.key = pmt::mp("code_phase");
-          tag.value = pmt::from_long(receivedCodePhase);
-          add_item_tag(0, tag);
-          sendTag = false;
-        }
         remCarrPhase =
             fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase), (2 * M_PI));
 
@@ -215,9 +203,16 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         remCodePhase = tEndPrompt - 1023.0;
 
         receivedCodePhase += remCodePhase;
-        message_port_pub(pmt::mp("channel_info"),
-                         pmt::cons(pmt::from_long(PRN),
-                                   pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode)));
+        // message_port_pub(pmt::mp("channel_info"),
+        //                  pmt::cons(pmt::from_long(PRN),
+        //                            pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode)));
+        if (msCount % 20 == 0) {
+          tag_t tag;
+          tag.offset = this->nitems_written(0) + i;
+          tag.key = pmt::mp(std::to_string(PRN));
+          tag.value = pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode);
+          this->add_item_tag(0, tag);
+        }
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)

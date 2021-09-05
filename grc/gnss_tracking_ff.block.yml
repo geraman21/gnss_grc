@@ -46,10 +46,6 @@ inputs:
   hide: false
 
 outputs:
-- domain: message
-  id: channel_info
-  optional: true
-  hide: false
 - label: out
   dtype: float
   optional: true

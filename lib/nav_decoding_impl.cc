@@ -9,6 +9,7 @@
 #include "ephemeris.h"
 #include "helper-functions.h"
 #include <algorithm>
+#include <cmath>
 #include <gnuradio/io_signature.h>
 #include <pmt/pmt.h>
 #include <string>
@@ -34,18 +35,6 @@ nav_decoding_impl::nav_decoding_impl(int channelNum)
           500 /*<+decimation+>*/) {
   channel = channelNum;
   message_port_register_out(pmt::string_to_symbol("nav_bits"));
-  message_port_register_in(pmt::string_to_symbol("channel_info"));
-  set_msg_handler(pmt::mp("channel_info"), [this](const pmt::pmt_t &msg) {
-    auto msg_key = pmt::car(msg);
-    auto msg_val = pmt::cdr(msg);
-
-    codePhaseMs = pmt::to_float(msg_val);
-    int receivedPRN = pmt::to_long(msg_key);
-    if (PRN != receivedPRN) {
-      restartDataExtraction();
-      PRN = receivedPRN;
-    }
-  });
 
   samplesForPreamble = 14000;
   int reversePreambleShort[]{1, 1, 0, 1, 0, 0, 0, 1};
@@ -78,10 +67,34 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
   const input_type *in = reinterpret_cast<const input_type *>(input_items[0]);
   output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
+  const uint64_t nread = this->nitems_read(0); // number of items read on port 0
+  const size_t ninput_items = noutput_items;   // assumption for sync block, this can change
+  // read all tags associated with port 0 for items in this work function
+  tags.clear();
+  this->get_tags_in_range(tags, 0, nread, nread + ninput_items * 500);
+
   for (int j = 0; j < noutput_items; j++) {
+    // Set PRN from the tag data and keep updating CodePhase
+    if (tags.size() > 0) {
+      int tagIndex = (25 * noutput_items / (j + 1)) - (25 * ninput_items - tags.size()) - 1;
+      pmt::pmt_t tag_key = tags.at(tagIndex).key;
+      pmt::pmt_t tag_val = tags.at(tagIndex).value;
+
+      codePhaseMs = pmt::to_float(tag_val);
+      int receivedPRN = std::stoi(pmt::symbol_to_string(tag_key));
+      if (std::isnan(receivedPRN))
+        continue;
+      if (PRN != receivedPRN) {
+        restartDataExtraction();
+        PRN = receivedPRN;
+      }
+    }
+
     for (int i = j * 500; i < j * 500 + 500; i++) {
-      // Add data to travel time queue and Collect enough data into a buffer to prepare nav bits
-      // for Ephemeris later
+      towCounter++;
+
+      // Add data to travel time queue and Collect enough data into a buffer
+      // to prepare nav bits for Ephemeris later
 
       in[i] == 0  ? travelTimeQue.push_back(0)
       : in[i] > 0 ? travelTimeQue.push_back(1)
@@ -104,6 +117,7 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
         }
 
         if (iterator == (subframeStart + 1500 * 20 - 1)) {
+          towCounter = 0;
           std::cout << "Ephemeris Data ready" << std::endl;
           // Prepare 5 sub frames worth of data in bit format
           std::vector<int> navBits;
@@ -128,12 +142,21 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
           gatherNavBits = false;
         }
       }
+
       iterator++;
     }
+
     if (travelTimeQue.size() >= samplesForPreamble &&
         std::find(travelTimeQue.begin(), travelTimeQue.end(), 0) == travelTimeQue.end()) {
       int start = findSubframeStart(travelTimeQue);
       result = codePhaseMs + start;
+      const size_t item_index = j; // which output item gets the tag?
+      const uint64_t offset = this->nitems_written(0) + item_index;
+      tag_t tag;
+      tag.offset = offset;
+      tag.key = pmt::mp("towoffset");
+      tag.value = pmt::from_double((towCounter * 1.0) / 1000);
+      this->add_item_tag(0, tag);
     }
     out[j] = result ? result : 0;
   }

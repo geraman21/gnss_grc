@@ -18,6 +18,7 @@ namespace gnss {
 class nav_decoding_impl : public nav_decoding {
 private:
   int PRN{};
+  unsigned long long int towCounter{};
   int channel;
   unsigned long long int iterator{0};
   bool gatherNavBits = false;
