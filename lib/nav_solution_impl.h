@@ -19,6 +19,7 @@ namespace gnss {
 class nav_solution_impl : public nav_solution {
 private:
   std::vector<Ephemeris> ephemerides;
+  bool restartIterator = false;
   bool startNavigation = true;
   int test = 0;
   unsigned int iterator = 0;

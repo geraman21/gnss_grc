@@ -121,7 +121,6 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
               sum = 0;
             }
           }
-          std::cout << "NAV bits size before sending:   " << navBits.size() << std::endl;
           auto size = sizeof(int) * navBits.size();
           auto pmt = pmt::make_blob(navBits.data(), size);
           message_port_pub(pmt::string_to_symbol("nav_bits"),

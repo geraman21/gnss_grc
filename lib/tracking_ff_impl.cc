@@ -213,6 +213,12 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
         // Update remaining Code Phase once per ms
         remCodePhase = tEndPrompt - 1023.0;
+
+        receivedCodePhase += remCodePhase;
+        message_port_pub(pmt::mp("channel_info"),
+                         pmt::cons(pmt::from_long(PRN),
+                                   pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode)));
+
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
         float carrError = atan(Q_P / I_P) / (2.0 * M_PI);

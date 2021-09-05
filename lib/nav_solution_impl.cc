@@ -33,6 +33,7 @@ nav_solution_impl::nav_solution_impl()
     Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
     if (data_object.channelNumber != -1) {
       ephemerides.at(data_object.channelNumber) = data_object;
+      restartIterator = true;
     }
   });
 }
@@ -52,18 +53,21 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
     // Ensure that at least 4 channels are available
 
     startNavigation = true;
-    int activeChannels{};
+    std::vector<float> active_input_items;
+    std::vector<Ephemeris> active_ephemerides;
     for (int p = 0; p < input_items.size(); p++) {
-      const input_type *in = reinterpret_cast<const input_type *>(input_items[p]);
-      if (in[i] != 0 && ephemerides.at(p).channelNumber != -1)
-        activeChannels++;
+      const float *in = reinterpret_cast<const input_type *>(input_items[p]);
+      if (in[i] != 0 && ephemerides.at(p).channelNumber != -1) {
+        active_input_items.push_back(in[i]);
+        active_ephemerides.push_back(ephemerides.at(p));
+      }
     }
-    if (activeChannels < 4) {
+    if (active_input_items.size() < 4) {
       startNavigation = false;
       test = 0;
     } else {
       if (test == 0) {
-        std::cout << "Active satellites:   " << activeChannels
+        std::cout << "Active satellites:   " << active_input_items.size()
                   << "  -  Navigation Solution in process" << std::endl;
         test++;
       }
@@ -71,12 +75,12 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
     if (startNavigation) {
 
-      pseudoRanges = getPseudoRanges(input_items, i, startOffset, c);
+      pseudoRanges = getPseudoRanges(active_input_items, i, startOffset, c);
 
-      std::vector<SatPosition> satPositions(input_items.size());
-      bool startNavCalculations = true;
-      for (int i = 0; i < input_items.size(); i++) {
-        satPositions.at(i) = SatPosition(ephemerides.at(i).TOW + iterator * 0.5, ephemerides.at(i));
+      std::vector<SatPosition> satPositions(active_input_items.size());
+      for (int i = 0; i < active_input_items.size(); i++) {
+        satPositions.at(i) =
+            SatPosition(active_ephemerides.at(i).TOW + iterator * 0.5, active_ephemerides.at(i));
         pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
       }
 
@@ -111,7 +115,10 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
       // std::cout << std::endl
       //           << "========================================" << std::endl
       //           << std::endl;
-      iterator++;
+    }
+    // Update TOW
+    for (auto eph : ephemerides) {
+      eph.TOW += 0.5;
     }
     out[i] = in0[i];
   }
