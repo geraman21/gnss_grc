@@ -18,6 +18,9 @@ namespace gnss {
 class nav_decoding_impl : public nav_decoding {
 private:
   int PRN{};
+  bool countSamples = false;
+  double absSampleCount{};
+  unsigned int subStartIndex{};
   unsigned long long int towCounter{};
   int channel;
   unsigned long long int iterator{0};
@@ -29,6 +32,7 @@ private:
   int buffer[37000];
   double codePhaseMs;
   std::deque<int> travelTimeQue;
+  // std::deque<uint64_t> absSamplesQue;
   int bitCounter{0}, bitSum{0};
   double result = 0;
   std::vector<tag_t> tags;

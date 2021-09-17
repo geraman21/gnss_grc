@@ -105,7 +105,7 @@ Ephemeris::Ephemeris(std::vector<int> &navBits, int channel) {
       break;
     }
     if (i == 5)
-      TOW = bin2dec(vecSelector(subframe, 31, 47)) * 6 - 30;
+      TOW = bin2dec(vecSelector(subframe, 31, 47)) * 6;
   }
 }
 Ephemeris::Ephemeris() {}

@@ -20,8 +20,10 @@ namespace gnss {
 
 class tracking_ff_impl : public tracking_ff {
 private:
+  uint64_t absSampleCount = 0;
   unsigned long int test = 0;
   unsigned long int totalSamples{};
+  double totalRemCodePhase{};
   bool doTracking = false;
   bool restartAcquisition = false;
   bool collectSamples = false;
@@ -56,6 +58,7 @@ private:
   float codePhaseStep = 0;
   float dllCorrelatorSpacing = 0.5;
   float output = 0;
+  float prevOutput{};
   int codeLength = 1023;
   float remCarrPhase = 0;
   float remCodePhase = 0;

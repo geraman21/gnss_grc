@@ -324,14 +324,14 @@ std::vector<int> vecSelector(std::vector<int> &source, int start, int end, int s
   return temp;
 }
 
-std::vector<float> getPseudoRanges(std::vector<float> &travelTime, int index, float startOffset,
-                                   long int c) {
-  std::vector<float> pseudoRanges(travelTime.begin(), travelTime.end());
+std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double startOffset,
+                                    long int c) {
+  std::vector<double> pseudoRanges(travelTime.begin(), travelTime.end());
 
   int minimum = floor(*std::min_element(pseudoRanges.begin(), pseudoRanges.end()));
   std::transform(pseudoRanges.begin(), pseudoRanges.end(), pseudoRanges.begin(),
-                 [minimum, startOffset, c](float a) {
-                   return a == 0 ? 0 : ((a - minimum + startOffset) * c / 1000);
+                 [minimum, startOffset, c](double a) {
+                   return a == 0 ? 0 : ((a - (double)minimum + startOffset) * (double)c / 1000.0);
                  });
 
   return pseudoRanges;

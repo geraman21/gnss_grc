@@ -28,6 +28,7 @@ namespace py = pybind11;
     void bind_data_distributor(py::module& m);
     void bind_channel_starter(py::module& m);
     void bind_ephemerides(py::module& m);
+    void bind_decimator(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 
@@ -63,5 +64,6 @@ PYBIND11_MODULE(gnss_python, m)
     bind_data_distributor(m);
     bind_channel_starter(m);
     bind_ephemerides(m);
+    bind_decimator(m);
     // ) END BINDING_FUNCTION_CALLS
 }

@@ -17,5 +17,6 @@ install(FILES
     acquisition.h
     data_distributor.h
     channel_starter.h
-    ephemerides.h DESTINATION include/gnss
+    ephemerides.h
+    decimator.h DESTINATION include/gnss
 )

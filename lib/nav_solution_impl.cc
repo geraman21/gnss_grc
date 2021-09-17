@@ -15,7 +15,7 @@
 namespace gr {
 namespace gnss {
 
-using input_type = float;
+using input_type = double;
 using output_type = float;
 nav_solution::sptr nav_solution::make() { return gnuradio::make_block_sptr<nav_solution_impl>(); }
 
@@ -56,20 +56,20 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
   for (int i = 0; i < noutput_items; i++) {
 
     // Ensure that at least 4 channels are available
-
+    std::cout.precision(12);
     startNavigation = true;
-    std::vector<float> active_input_items;
+    std::vector<double> active_input_items;
     std::vector<Ephemeris> active_ephemerides;
-    std::vector<float> towOffsets;
+    std::vector<double> towOffsets;
     for (int p = 0; p < input_items.size(); p++) {
-      const float *in = reinterpret_cast<const input_type *>(input_items[p]);
+      const double *in = reinterpret_cast<const input_type *>(input_items[p]);
       tags.clear();
       this->get_tags_in_range(tags, p, nread, nread + ninput_items, pmt::mp("towoffset"));
 
       if (in[i] != 0 && ephemerides.at(p).channelNumber != -1) {
         active_input_items.push_back(in[i]);
         active_ephemerides.push_back(ephemerides.at(p));
-        towOffsets.push_back(pmt::to_float(tags.at(i).value));
+        towOffsets.push_back(pmt::to_double(tags.at(i).value));
       }
     }
     if (active_input_items.size() < 4) {
@@ -82,23 +82,45 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
         test++;
       }
     }
+    // if (navTest == 0) {
+    //   vector<SatPosition> satPos{
+    //       SatPosition(710590.946167625, -20534747.0669515, 16565299.3863555),
+    //       SatPosition(-18853767.1676574, -12561495.5559795, 14004713.975897),
+    //       SatPosition(-10834993.1792765, -10565346.9108378, 21612853.8879797),
+    //       SatPosition(-8526254.76971803, -15275511.9944097, 20120992.0587014)};
+    //   vector<double> pseudoRanges{20767164.2372144, 22165191.9581342, 21321286.6633887,
+    //                               21040638.9270996};
 
+    //   auto [xyzdt, el, az, DOP] = leastSquarePos(satPos, pseudoRanges, 299792458);
+    //   cout << "xyzdt(0): " << xyzdt(0) << "  xyzdt(1): " << xyzdt(1) << "  xyzdt(2): " <<
+    //   xyzdt(2)
+    //        << endl;
+
+    //   navTest++;
+    // }
     if (startNavigation) {
-
-      pseudoRanges = getPseudoRanges(active_input_items, i, startOffset, c);
+      // std::cout.precision(9);
+      // for (auto i : active_input_items) {
+      //   std::cout << std::fixed << "   " << i;
+      // }
+      pseudoRanges = getPseudoRanges(active_input_items, startOffset, c);
 
       std::vector<SatPosition> satPositions(active_input_items.size());
       for (int i = 0; i < active_input_items.size(); i++) {
-        satPositions.at(i) =
-            SatPosition(active_ephemerides.at(i).TOW + towOffsets.at(i), active_ephemerides.at(i));
+        double transmitTime = active_ephemerides.at(i).TOW * 1.0 + towOffsets.at(i) * 1.0;
+        satPositions.at(i) = SatPosition(transmitTime, active_ephemerides.at(i));
         pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
+        // std::cout << std::fixed << "   " << satPositions.at(i).pos1 << "   "
+        //           << satPositions.at(i).pos2 << "   " << satPositions.at(i).pos3 << std::endl;
       }
+      std::cout << std::endl;
 
       auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
       auto [latitude, longitude, height] = cart2geo(xyzdt(0), xyzdt(1), xyzdt(2), 5);
       cout << "xyzdt(0): " << xyzdt(0) << "  xyzdt(1): " << xyzdt(1) << "  xyzdt(2): " << xyzdt(2)
            << endl;
-      // cout << "latitude: " << latitude << "  longitude: " << longitude << "  height: " << height
+      // cout << "latitude: " << latitude << "  longitude: " << longitude << "  height: " <<
+      // height
       // << endl; std::cout << "xyzdt: " << xyzdt << std::endl
       //           << std::endl;
       // std::cout << "El: [ ";
@@ -125,10 +147,6 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
       // std::cout << std::endl
       //           << "========================================" << std::endl
       //           << std::endl;
-    }
-    // Update TOW
-    for (auto eph : ephemerides) {
-      eph.TOW += 0.5;
     }
     out[i] = in0[i];
   }

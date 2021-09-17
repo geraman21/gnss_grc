@@ -19,7 +19,7 @@ namespace gr {
 namespace gnss {
 
 using input_type = float;
-using output_type = float;
+using output_type = double;
 nav_decoding::sptr nav_decoding::make(int channelNum) {
   return gnuradio::make_block_sptr<nav_decoding_impl>(channelNum);
 }
@@ -33,6 +33,7 @@ nav_decoding_impl::nav_decoding_impl(int channelNum)
           gr::io_signature::make(1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)),
           500 /*<+decimation+>*/) {
+  set_tag_propagation_policy(TPP_DONT);
   channel = channelNum;
   message_port_register_out(pmt::string_to_symbol("nav_bits"));
 
@@ -68,30 +69,37 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
   output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
   const uint64_t nread = this->nitems_read(0); // number of items read on port 0
-  const size_t ninput_items = noutput_items;   // assumption for sync block, this can change
+  const size_t ninput_items = noutput_items * 500;
   // read all tags associated with port 0 for items in this work function
   tags.clear();
-  this->get_tags_in_range(tags, 0, nread, nread + ninput_items * 500);
+  this->get_tags_in_range(tags, 0, nread, nread + ninput_items);
 
   for (int j = 0; j < noutput_items; j++) {
-    // Set PRN from the tag data and keep updating CodePhase
-    if (tags.size() > 0) {
-      int tagIndex = (25 * noutput_items / (j + 1)) - (25 * ninput_items - tags.size()) - 1;
-      pmt::pmt_t tag_key = tags.at(tagIndex).key;
-      pmt::pmt_t tag_val = tags.at(tagIndex).value;
-
-      codePhaseMs = pmt::to_float(tag_val);
-      int receivedPRN = std::stoi(pmt::symbol_to_string(tag_key));
-      if (std::isnan(receivedPRN))
-        continue;
-      if (PRN != receivedPRN) {
-        restartDataExtraction();
-        PRN = receivedPRN;
-      }
+    towCounter += 500;
+    if (absSampleCount != 0) {
+      absSampleCount = pmt::to_uint64(tags.at(j * 500 + subStartIndex).value);
+      // std::cout << "   RemCodePhase   " << absSampleCount;
     }
-
     for (int i = j * 500; i < j * 500 + 500; i++) {
-      towCounter++;
+
+      // Check if Channel PRN has been changed
+      if (tags.size() == ninput_items) {
+        // if (i == j * 500) {
+        //   uint64_t absSamp = pmt::to_uint64(tags.at(i).value);
+        //   std::cout.precision(16);
+        //   std::cout << std::fixed << (double)absSamp / 38192.0 << std::endl;
+        // }
+
+        int receivedPRN = std::stoi(pmt::symbol_to_string(tags.at(i).key));
+
+        // Set PRN from the tag data
+        if (!std::isnan(receivedPRN) && PRN != receivedPRN) {
+          restartDataExtraction();
+          PRN = receivedPRN;
+        }
+      } else if (travelTimeQue.size() > samplesForPreamble) {
+        travelTimeQue.pop_front();
+      }
 
       // Add data to travel time queue and Collect enough data into a buffer
       // to prepare nav bits for Ephemeris later
@@ -99,9 +107,6 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
       in[i] == 0  ? travelTimeQue.push_back(0)
       : in[i] > 0 ? travelTimeQue.push_back(1)
                   : travelTimeQue.push_back(-1);
-      if (travelTimeQue.size() > samplesForPreamble) {
-        travelTimeQue.pop_front();
-      }
 
       // Gather Nav Bits for Ephemeris Min 5 subframes is required
 
@@ -118,6 +123,8 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
         if (iterator == (subframeStart + 1500 * 20 - 1)) {
           towCounter = 0;
+          subStartIndex = i % 500;
+          absSampleCount = pmt::to_uint64(tags.at(j * 500 + subStartIndex).value);
           std::cout << "Ephemeris Data ready" << std::endl;
           // Prepare 5 sub frames worth of data in bit format
           std::vector<int> navBits;
@@ -146,10 +153,7 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
       iterator++;
     }
 
-    if (travelTimeQue.size() >= samplesForPreamble &&
-        std::find(travelTimeQue.begin(), travelTimeQue.end(), 0) == travelTimeQue.end()) {
-      int start = findSubframeStart(travelTimeQue);
-      result = codePhaseMs + start;
+    if (absSampleCount != 0) {
       const size_t item_index = j; // which output item gets the tag?
       const uint64_t offset = this->nitems_written(0) + item_index;
       tag_t tag;
@@ -158,6 +162,12 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
       tag.value = pmt::from_double((towCounter * 1.0) / 1000);
       this->add_item_tag(0, tag);
     }
+
+    result = (double)absSampleCount / 38192.0;
+    // if (result > 0 && channel == 0) {
+    //   std::cout.precision(16);
+    //   std::cout << "   " << std::fixed << result;
+    // }
     out[j] = result ? result : 0;
   }
 

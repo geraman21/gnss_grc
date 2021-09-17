@@ -25,6 +25,7 @@ list(APPEND gnss_sources
     data_distributor_impl.cc
     channel_starter_impl.cc
     ephemerides_impl.cc
+    decimator_impl.cc
 )
 
 set(gnss_sources "${gnss_sources}" PARENT_SCOPE)

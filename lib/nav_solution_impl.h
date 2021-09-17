@@ -23,12 +23,12 @@ private:
   bool restartIterator = false;
   bool startNavigation = true;
   int test = 0;
+  int navTest{};
   unsigned int iterator = 0;
-  int initDelay = 250;
   // The speed of light, [m/s]
   long int c = 299792458;
-  float startOffset = 68.802;
-  std::vector<float> pseudoRanges;
+  double startOffset = 68.802;
+  std::vector<double> pseudoRanges;
 
 public:
   nav_solution_impl();

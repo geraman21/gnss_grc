@@ -27,8 +27,8 @@ std::vector<int> vecSelector(std::vector<int> &source, int start, int end, int s
 
 void printEphemeris(Ephemeris *ephResults);
 
-std::vector<float> getPseudoRanges(std::vector<float> &travelTime, int index, float startOffset,
-                                   long int c);
+std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double startOffset,
+                                    long int c);
 
 void custom_fft(std::valarray<std::complex<double>> &x);
 void custom_ifft(std::valarray<std::complex<double>> &x);

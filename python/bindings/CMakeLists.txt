@@ -34,7 +34,8 @@ list(APPEND gnss_python_files
     acquisition_python.cc
     data_distributor_python.cc
     channel_starter_python.cc
-    ephemerides_python.cc python_bindings.cc)
+    ephemerides_python.cc
+    decimator_python.cc python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(gnss 
    ../..

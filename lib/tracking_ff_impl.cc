@@ -74,7 +74,6 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   float fullMsPassed = ceil(totalSamplesFromStart / blksize);
   receivedCodePhase = fullMsPassed * blksize - totalSamplesFromStart;
   codePhase = receivedCodePhase;
-  std::cout << "Tracking codePhase:  " << (receivedCodePhase * 1.0) / samplesPerCode << std::endl;
   carrFreq = acqResult.carrFreq;
   carrFreqBasis = acqResult.carrFreq;
   PRN = acqResult.PRN;
@@ -121,7 +120,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
   float tStartPrompt = remCodePhase;
   float tEndPrompt = blksize * codePhaseStep + remCodePhase;
   for (int i = 0; i < noutput_items; i++) {
-
+    absSampleCount++;
     if (restartAcquisition) {
       totalSamples++;
     }
@@ -190,11 +189,12 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       // and reset iterator else incr iterator
       if (iterator == blksize - 1) {
         // quality check whether we receive a real 50hz signal, allow 200ms for channel to stabilize
-        if (signbit(output) != signbit(I_P) && msCount > 200)
+        if (signbit(prevOutput) != signbit(I_P) && msCount > 200)
           signChangeCount++;
 
         // Update output value to I_P
         output = I_P;
+        prevOutput = I_P;
 
         remCarrPhase =
             fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase), (2 * M_PI));
@@ -202,17 +202,11 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         // Update remaining Code Phase once per ms
         remCodePhase = tEndPrompt - 1023.0;
 
-        receivedCodePhase += remCodePhase;
-        // message_port_pub(pmt::mp("channel_info"),
-        //                  pmt::cons(pmt::from_long(PRN),
-        //                            pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode)));
-        if (msCount % 20 == 0) {
-          tag_t tag;
-          tag.offset = this->nitems_written(0) + i;
-          tag.key = pmt::mp(std::to_string(PRN));
-          tag.value = pmt::from_float((receivedCodePhase * 1.0) / samplesPerCode);
-          this->add_item_tag(0, tag);
-        }
+        tag_t tag;
+        tag.offset = this->nitems_written(0) + i;
+        tag.key = pmt::mp(std::to_string(PRN));
+        tag.value = pmt::from_uint64(absSampleCount);
+        this->add_item_tag(0, tag);
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
@@ -238,18 +232,24 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         //  Modify code freq based on NCO command and update codePhaseStep
         codeFreq = chippingRate - codeNco;
         codePhaseStep = codeFreq * samplePeriod;
+        // update blksize
+        blksize = std::ceil((codeLength - remCodePhase) / codePhaseStep);
+
+        // if (test > 10000 && test < 10100) {
+        //   std::cout << "    " << blksize << std::endl;
+        // }
+        // test++;
 
         // Reset early late and prompt correlation results and set iterator to 0
         Q_E = I_E = Q_P = I_P = Q_L = I_L = 0;
         iterator = 0;
-        // update blksize
-        blksize = std::ceil((codeLength - remCodePhase) / codePhaseStep);
         msCount++;
       } else {
         iterator++;
       }
     }
     out[i] = output ? output : 0;
+    output = 0;
   }
 
   // Tell runtime system how many output items we produced.
