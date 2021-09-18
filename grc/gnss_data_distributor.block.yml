@@ -1,10 +1,10 @@
-id: gnss_tracking_ff
-label: Channel Tracker
+id: gnss_data_distributor
+label: Data Distributor
 category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.tracking_ff(${_channelNum}, ${_sampleFreq})
+  make: gnss.data_distributor(${numSamples})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -12,19 +12,10 @@ templates:
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
-- id: _channelNum
-  label: Channel Number
+- id: numSamples
+  label: Samples to send
   dtype: int
   value: 0
-- id: _sampleFreq
-  label: Sampling Freq
-  dtype: float
-  value: 0
-
-# - id: parametername_replace_me
-#   label: FIX ME:
-#   dtype: string
-#   value: You need to fill in your grc/gnss_tracking_ff.block.yaml
 #- id: ...
 #  label: ...
 #  dtype: ...
@@ -53,6 +44,7 @@ outputs:
   id: data_vector
   optional: true
   hide: false
+
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
 file_format: 1

@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(tracking_ff.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(ffac55b60c4412cd5e7fd0ca15134d7b)                     */
+/* BINDTOOL_HEADER_FILE(acquisition.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(e9b379220b8e3fa216f9e80a2769a04f)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,19 +23,19 @@
 
 namespace py = pybind11;
 
-#include <gnss/tracking_ff.h>
+#include <gnss/acquisition.h>
 // pydoc.h is automatically generated in the build directory
-#include <tracking_ff_pydoc.h>
+#include <acquisition_pydoc.h>
 
-void bind_tracking_ff(py::module &m) {
+void bind_acquisition(py::module &m) {
 
-  using tracking_ff = gr::gnss::tracking_ff;
+  using acquisition = gr::gnss::acquisition;
 
-  py::class_<tracking_ff, gr::sync_block, gr::block, gr::basic_block, std::shared_ptr<tracking_ff>>(
-      m, "tracking_ff", D(tracking_ff))
+  py::class_<acquisition, gr::block, gr::basic_block, std::shared_ptr<acquisition>>(
+      m, "acquisition", D(acquisition))
 
-      .def(py::init(&tracking_ff::make), py::arg("_channelNum"), py::arg("_sampleFreq"),
-           D(tracking_ff, make))
+      .def(py::init(&acquisition::make), py::arg("a_sampleFreq"), py::arg("a_channelNum"),
+           D(acquisition, make))
 
       ;
 }

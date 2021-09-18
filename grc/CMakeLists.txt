@@ -5,7 +5,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 install(FILES
-    gnss_tracking_ff.block.yml DESTINATION share/gnuradio/grc/blocks
+    gnss_tracking_ff.block.yml
+    gnss_nav_decoding.block.yml
+    gnss_nav_solution.block.yml
+    gnss_acquisition.block.yml
+    gnss_data_distributor.block.yml
+    gnss_channel_starter.block.yml
+    gnss_ephemerides.block.yml
+    gnss_decimator.block.yml DESTINATION share/gnuradio/grc/blocks
 )

@@ -1,10 +1,10 @@
-id: gnss_tracking_ff
-label: Channel Tracker
+id: gnss_nav_decoding
+label: nav_decoding
 category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.tracking_ff(${_channelNum}, ${_sampleFreq})
+  make: gnss.nav_decoding(${channelNum})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -12,19 +12,11 @@ templates:
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
-- id: _channelNum
-  label: Channel Number
+- id: channelNum
+  label: Channel Number (0-7)
   dtype: int
   value: 0
-- id: _sampleFreq
-  label: Sampling Freq
-  dtype: float
-  value: 0
 
-# - id: parametername_replace_me
-#   label: FIX ME:
-#   dtype: string
-#   value: You need to fill in your grc/gnss_tracking_ff.block.yaml
 #- id: ...
 #  label: ...
 #  dtype: ...
@@ -39,20 +31,18 @@ parameters:
 inputs:
 - label: in
   dtype: float
-  optional: true
-- domain: message
-  id: acquisition
-  optional: true
-  hide: false
+  optional: false
+
 
 outputs:
 - label: out
   dtype: float
   optional: true
 - domain: message
-  id: data_vector
+  id: nav_bits
   optional: true
   hide: false
+
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
 file_format: 1

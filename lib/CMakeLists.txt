@@ -10,12 +10,22 @@
 # Setup library
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
-
 list(APPEND gnss_sources
+    acqResults.cc
     tracking_ff_impl.cc
     generate_l1_ca.cc
     helper-functions.cc
+    ephemeris.cc
+    geo-functions.cc
+    sat-position.cc
     channel.cc
+    nav_decoding_impl.cc
+    nav_solution_impl.cc
+    acquisition_impl.cc
+    data_distributor_impl.cc
+    channel_starter_impl.cc
+    ephemerides_impl.cc
+    decimator_impl.cc
 )
 
 set(gnss_sources "${gnss_sources}" PARENT_SCOPE)
@@ -26,6 +36,8 @@ endif(NOT gnss_sources)
 
 add_library(gnuradio-gnss SHARED ${gnss_sources})
 target_link_libraries(gnuradio-gnss gnuradio::gnuradio-runtime)
+target_link_libraries(gnuradio-gnss gnuradio::gnuradio-fft)
+target_link_libraries(gnuradio-gnss Eigen3::Eigen)
 target_include_directories(gnuradio-gnss
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>
