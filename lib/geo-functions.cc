@@ -135,7 +135,7 @@ tuple<double, double, double> topocent(Vector3d X, Vector3d dx) {
   //        Az          - azimuth from north positive clockwise, degrees
   //        El          - elevation angle, degrees
 
-  float dtr = M_PI / 180;
+  double dtr = M_PI / 180;
   double Az, El, D;
   auto [phi, lambda, h] = togeod(6378137, 298.257223563, X(0), X(1), X(2));
 
@@ -169,13 +169,102 @@ tuple<double, double, double> topocent(Vector3d X, Vector3d dx) {
   return {Az, El, D};
 }
 
+double tropo(double sinel, double hsta, double p, double tkel, double hum, double hp, double htkel,
+             double hhum) {
+  // TROPO  Calculation of tropospheric correction.
+  //       The range correction ddr in m is to be subtracted from
+  //       pseudo-ranges and carrier phases
+  //
+  // ddr = tropo(sinel, hsta, p, tkel, hum, hp, htkel, hhum);
+  //
+  //   Inputs:
+  //       sinel   - sin of elevation angle of satellite
+  //       hsta    - height of station in km
+  //       p       - atmospheric pressure in mb at height hp
+  //       tkel    - surface temperature in degrees Kelvin at height htkel
+  //       hum     - humidity in % at height hhum
+  //       hp      - height of pressure measurement in km
+  //       htkel   - height of temperature measurement in km
+  //       hhum    - height of humidity measurement in km
+  //
+  //   Outputs:
+  //       ddr     - range correction (meters)
+
+  double a_e = 6378.137;
+  // semi - major axis of earth ellipsoid
+  double b0 = 7.839257e-5;
+  double tlapse = -6.5;
+  double tkhum = tkel + tlapse * (hhum - htkel);
+  double atkel = 7.5 * (tkhum - 273.15) / (237.3 + tkhum - 273.15);
+  double e0 = 0.0611 * hum * pow(10, atkel);
+  double tksea = tkel - tlapse * htkel;
+  double em = -978.77 / (2.8704e6 * tlapse * 1.0e-5);
+  double tkelh = tksea + tlapse * hhum;
+  double e0sea = e0 * pow((tksea / tkelh), (4 * em));
+  double tkelp = tksea + tlapse * hp;
+  double psea = p * pow((tksea / tkelp), em);
+  double ddr{};
+
+  if (sinel < 0)
+    sinel = 0;
+
+  double tropo = 0;
+  bool done = false;
+  double refsea = 77.624e-6 / tksea;
+  double htop = 1.1385e-5 / refsea;
+  refsea = refsea * psea;
+  double ref = refsea * pow(((htop - hsta) / htop), 4);
+
+  while (1) {
+    double rtop = pow((a_e + htop), 2) - pow((a_e + hsta), 2) * (1 - pow((sinel), 2));
+
+    // check to see if geometry is crazy
+    if (rtop < 0)
+      rtop = 0;
+
+    rtop = sqrt(rtop) - (a_e + hsta) * sinel;
+    double a = -sinel / (htop - hsta);
+    double b = -b0 * (1 - pow(sinel, 2)) / (htop - hsta);
+    VectorXd rn(8);
+    rn.setZero();
+
+    for (int i = 1; i <= rn.size(); i++)
+      rn(i - 1) = pow(rtop, (i + 1));
+
+    RowVectorXd alpha(8);
+
+    alpha << 2 * a, 2 * pow(a, 2) + 4 * b / 3, a * (pow(a, 2) + 3 * b),
+        pow(a, 4) / 5 + 2.4 * pow(a, 2) * b + 1.2 * pow(b, 2), 2 * a * b * (pow(a, 2) + 3 * b) / 3,
+        pow(b, 2) * (6 * pow(a, 2) + 4 * b) * 1.428571e-1, 0, 0;
+    if (pow(b, 2) > 1.0e-35) {
+      alpha(6) = a * pow(b, 3) / 2;
+      alpha(7) = pow(b, 4) / 9;
+    }
+
+    double dr = rtop;
+    dr = dr + alpha * rn;
+    tropo = tropo + dr * ref * 1000;
+
+    if (done) {
+      ddr = tropo;
+      break;
+    }
+
+    done = true;
+    refsea = (371900.0e-6 / tksea - 12.92e-6) / tksea;
+    htop = 1.1385e-5 * (1255 / tksea + 0.05) / refsea;
+    ref = refsea * e0sea * pow(((htop - hsta) / htop), 4);
+  }
+  return ddr;
+}
+
 tuple<Vector4d, vector<double>, vector<double>, vector<double>>
 leastSquarePos(vector<SatPosition> satpos, vector<double> obs, long int c)
 
 {
 
   double dtr = M_PI / 180;
-  int trop;
+  double trop;
   Vector3d Rot_X;
 
   int nmbOfIterations = 7;
@@ -206,6 +295,7 @@ leastSquarePos(vector<SatPosition> satpos, vector<double> obs, long int c)
         auto [azi, eli, dist] = topocent(pos.head(3), Rot_X - pos.head(3));
         az.at(i) = azi;
         el.at(i) = eli;
+        trop = tropo(sin(el.at(i) * dtr), 0.0, 1013.0, 293.0, 50.0, 0.0, 0.0, 0.0);
       }
       omc(i) = obs.at(i) - (Rot_X - pos.head(3)).norm() - pos(4) - trop;
 
@@ -214,17 +304,6 @@ leastSquarePos(vector<SatPosition> satpos, vector<double> obs, long int c)
     }
     MatrixXd x;
     x = A.colPivHouseholderQr().solve(omc);
-    // if (iter == 1 - 1) {
-    //   cout.precision(12);
-    //   cout << fixed << "A ++++++++++++" << endl;
-    //   cout << fixed << A << endl;
-    //   cout << fixed << "OMC ++++++++++" << endl;
-    //   cout << fixed << omc << endl;
-    //   cout << fixed << "x ++++++++++++" << endl;
-    //   cout << fixed << x << endl;
-    //   cout << fixed << "pos +++++++++++" << endl;
-    //   cout << fixed << pos << endl;
-    // }
     pos = pos + x;
   }
   //     Q       = inv(A'*A);
