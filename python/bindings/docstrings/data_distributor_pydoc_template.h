@@ -16,12 +16,9 @@
 
 
  
- static const char *__doc_gr_gnss_nav_solution = R"doc()doc";
+ static const char *__doc_gr_gnss_data_distributor = R"doc()doc";
 
 
- static const char *__doc_gr_gnss_nav_solution_nav_solution = R"doc()doc";
-
-
- static const char *__doc_gr_gnss_nav_solution_make = R"doc()doc";
+ static const char *__doc_gr_gnss_data_distributor_make = R"doc()doc";
 
   

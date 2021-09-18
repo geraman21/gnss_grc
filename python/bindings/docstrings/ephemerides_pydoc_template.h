@@ -16,12 +16,12 @@
 
 
  
- static const char *__doc_gr_gnss_nav_solution = R"doc()doc";
+ static const char *__doc_gr_gnss_ephemerides = R"doc()doc";
 
 
- static const char *__doc_gr_gnss_nav_solution_nav_solution = R"doc()doc";
+ static const char *__doc_gr_gnss_ephemerides_ephemerides = R"doc()doc";
 
 
- static const char *__doc_gr_gnss_nav_solution_make = R"doc()doc";
+ static const char *__doc_gr_gnss_ephemerides_make = R"doc()doc";
 
   

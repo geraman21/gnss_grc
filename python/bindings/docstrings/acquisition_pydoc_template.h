@@ -16,9 +16,9 @@
 
 
  
- static const char *__doc_gr_gnss_decoding_test = R"doc()doc";
+ static const char *__doc_gr_gnss_acquisition = R"doc()doc";
 
 
- static const char *__doc_gr_gnss_decoding_test_make = R"doc()doc";
+ static const char *__doc_gr_gnss_acquisition_make = R"doc()doc";
 
   

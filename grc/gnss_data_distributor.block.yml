@@ -1,10 +1,10 @@
-id: gnss_decoding_test
-label: Nav-data extractor
+id: gnss_data_distributor
+label: Data Distributor
 category: '[gnss]'
 
 templates:
   imports: import gnss
-  make: gnss.decoding_test(${channelNum}, ${codePhase})
+  make: gnss.data_distributor(${numSamples})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -12,12 +12,8 @@ templates:
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
-- id: channelNum
-  label: Channel Number (0-7)
-  dtype: int
-  value: 0
-- id: codePhase
-  label: Code Phases
+- id: numSamples
+  label: Samples to send
   dtype: int
   value: 0
 #- id: ...
@@ -34,15 +30,18 @@ parameters:
 inputs:
 - label: in
   dtype: float
-  optional: false
-
+  optional: true
+- domain: message
+  id: acquisition
+  optional: true
+  hide: false
 
 outputs:
 - label: out
   dtype: float
   optional: true
 - domain: message
-  id: ephemeris
+  id: data_vector
   optional: true
   hide: false
 
