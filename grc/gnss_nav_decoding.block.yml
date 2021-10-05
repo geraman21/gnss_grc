@@ -1,10 +1,10 @@
 id: gnss_nav_decoding
-label: Nav-data Provider
+label: Nav-data Extractor
 category: "[gnss]"
 
 templates:
   imports: import gnss
-  make: gnss.nav_decoding(${channelNum})
+  make: gnss.nav_decoding(${channelNum}, ${_sampleFreq})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -16,6 +16,10 @@ parameters:
     label: Channel Number (0-7)
     dtype: int
     default: 0
+  - id: _sampleFreq
+    label: Sampling Freq.
+    dtype: float
+    default: samp_rate
 
 #- id: ...
 #  label: ...

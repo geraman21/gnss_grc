@@ -31,7 +31,7 @@ public:
    * class. gnss::nav_decoding::make is the public interface for
    * creating new instances.
    */
-  static sptr make(int channelNum);
+  static sptr make(int channelNum, float _sampleFreq);
 };
 
 } // namespace gnss

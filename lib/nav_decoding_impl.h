@@ -18,6 +18,7 @@ namespace gnss {
 class nav_decoding_impl : public nav_decoding {
 private:
   int PRN{};
+  float sampleFreq;
   bool countSamples = false;
   double absSampleCount{};
   unsigned int subStartIndex{};
@@ -39,7 +40,7 @@ private:
   void restartDataExtraction();
 
 public:
-  nav_decoding_impl(int channelNum);
+  nav_decoding_impl(int channelNum, float _sampleFreq);
   ~nav_decoding_impl();
 
   // Where all the action really happens

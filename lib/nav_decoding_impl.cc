@@ -20,19 +20,20 @@ namespace gnss {
 
 using input_type = float;
 using output_type = double;
-nav_decoding::sptr nav_decoding::make(int channelNum) {
-  return gnuradio::make_block_sptr<nav_decoding_impl>(channelNum);
+nav_decoding::sptr nav_decoding::make(int channelNum, float _sampleFreq) {
+  return gnuradio::make_block_sptr<nav_decoding_impl>(channelNum, _sampleFreq);
 }
 
 /*
  * The private constructor
  */
-nav_decoding_impl::nav_decoding_impl(int channelNum)
+nav_decoding_impl::nav_decoding_impl(int channelNum, float _sampleFreq)
     : gr::sync_decimator(
           "nav_decoding",
           gr::io_signature::make(1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(1 /* min outputs */, 1 /*max outputs */, sizeof(output_type)),
-          500 /*<+decimation+>*/) {
+          500 /*<+decimation+>*/),
+      sampleFreq{_sampleFreq} {
   set_tag_propagation_policy(TPP_DONT);
   channel = channelNum;
   message_port_register_out(pmt::string_to_symbol("nav_bits"));
@@ -170,7 +171,7 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
       this->add_item_tag(0, tag);
     }
 
-    result = (double)absSampleCount / 38192.0;
+    result = (double)absSampleCount / (sampleFreq / 1000);
     // if (result > 0 && channel == 0) {
     //   std::cout.precision(16);
     //   std::cout << "   " << std::fixed << result;
