@@ -9,6 +9,7 @@
 #include <gnuradio/fft/fft.h>
 #include <iostream>
 #include <numeric>
+#include <tuple>
 #include <valarray>
 #include <vector>
 
@@ -375,9 +376,8 @@ void custom_ifft(std::valarray<std::complex<double>> &x) {
   x /= x.size();
 }
 
-// Acquisition for a certain PRN
-AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
-                              std::vector<float> &longSignal) {
+std::tuple<int, float> getChannelStrength(float ts, std::vector<std::complex<float>> &caCodeVector,
+                                          std::vector<float> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
   int numberOfFrqBins = 29;
@@ -507,8 +507,19 @@ AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>
         secondPeakSize = results.at(frequencyBinIndex).at(i);
     }
   }
+  return {codePhase, peakSize / secondPeakSize};
+}
 
-  if (peakSize / secondPeakSize > 2.5) {
+// Acquisition for a certain PRN
+AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
+                              std::vector<float> &longSignal) {
+  float sampleFreq = 1.0 / ts;
+  int samplesPerCode = floor(1.0 / (ts * 1000));
+  float codeFreqBasis = 1023000;
+
+  auto [codePhase, channelStrength] = getChannelStrength(ts, caCodeVector, longSignal);
+
+  if (channelStrength > 2.5) {
     std::vector<int> caCode = generateCa(PRN);
     std::vector<std::complex<float>> xCarrier;
     xCarrier.reserve(samplesPerCode * 10);
@@ -543,7 +554,7 @@ AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>
 
     // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ",
     // CodePhase: " << codePhase << std::endl;
-    AcqResults result(PRN, carrFreq, codePhase, peakSize / secondPeakSize);
+    AcqResults result(PRN, carrFreq, codePhase, channelStrength);
     return result;
   } else
     return AcqResults();
@@ -552,136 +563,11 @@ AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>
 // Acquisition for a certain PRN
 AcqResults checkIfChannelPresent(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
                                  std::vector<float> &longSignal) {
-  float sampleFreq = 1.0 / ts;
-  int samplesPerCode = floor(1.0 / (ts * 1000));
-  int numberOfFrqBins = 29;
-  std::vector<int> frqBins(numberOfFrqBins, 0);
-  std::vector<std::vector<float>> results(numberOfFrqBins);
-  float IF = 9.548e6;
-  float codeFreqBasis = 1023000;
 
-  gr::fft::fft_complex_fwd p1_fft(samplesPerCode, 1);
-  gr::fft::fft_complex_rev p1_fft_rev(samplesPerCode, 1);
+  auto [codePhase, channelStrength] = getChannelStrength(ts, caCodeVector, longSignal);
 
-  std::complex<float> *dst = p1_fft.get_inbuf();
-  memcpy(&dst[0], caCodeVector.data(), sizeof(std::complex<float>) * samplesPerCode);
-  p1_fft.execute();
-  std::vector<std::complex<float>> caCodeFreqDom(samplesPerCode);
-  memcpy(caCodeFreqDom.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
-
-  for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++) {
-    //  Generate carrier wave frequency grid (0.5kHz step)
-    frqBins.at(frqBinIndex) = IF - 7000 + 0.5e3 * frqBinIndex;
-    std::vector<std::complex<float>> IQSignal1(samplesPerCode);
-    std::vector<std::complex<float>> IQSignal2(samplesPerCode);
-    for (int k = 0; k < samplesPerCode; k++) {
-      caCodeFreqDom.at(k) = std::conj(caCodeFreqDom.at(k));
-      // Generate local sine and cosine
-      float sinCarr, cosCarr;
-      sinCarr = sinf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
-      cosCarr = cosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
-      float I1 = sinCarr * longSignal.at(k);
-      float Q1 = cosCarr * longSignal.at(k);
-      float I2 = sinCarr * longSignal.at(k + samplesPerCode);
-      float Q2 = cosCarr * longSignal.at(k + samplesPerCode);
-
-      IQSignal1.at(k) = std::complex<float>(I1, Q1);
-      IQSignal2.at(k) = std::complex<float>(I2, Q2);
-    }
-
-    // IQSignal1 = fft(I1 + j * Q1);
-    // IQSignal2 = fft(I2 + j * Q2);
-    std::complex<float> *ptr = p1_fft.get_inbuf();
-    memcpy(&ptr[0], IQSignal1.data(), sizeof(gr_complex) * samplesPerCode);
-    p1_fft.execute();
-    memcpy(IQSignal1.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
-
-    std::complex<float> *ptr2 = p1_fft.get_inbuf();
-    memcpy(&ptr2[0], IQSignal2.data(), sizeof(gr_complex) * samplesPerCode);
-    p1_fft.execute();
-    memcpy(IQSignal2.data(), p1_fft.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
-
-    for (int i = 0; i < samplesPerCode; i++) {
-      IQSignal1.at(i) = IQSignal1.at(i) * caCodeFreqDom.at(i);
-      IQSignal2.at(i) = IQSignal2.at(i) * caCodeFreqDom.at(i);
-    }
-
-    std::complex<float> *rev_ptr = p1_fft_rev.get_inbuf();
-    memcpy(&rev_ptr[0], IQSignal1.data(), sizeof(gr_complex) * samplesPerCode);
-    p1_fft_rev.execute();
-    memcpy(IQSignal1.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
-
-    memcpy(&rev_ptr[0], IQSignal2.data(), sizeof(gr_complex) * samplesPerCode);
-    p1_fft_rev.execute();
-    memcpy(IQSignal2.data(), p1_fft_rev.get_outbuf(), sizeof(gr_complex) * samplesPerCode);
-
-    std::vector<float> acqRes1, acqRes2;
-    float max1{0}, max2{0};
-    int index1{0}, index2{0};
-    for (int i = 0; i < samplesPerCode; i++) {
-
-      float ac1 = std::pow(std::abs(IQSignal1.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
-      float ac2 = std::pow(std::abs(IQSignal2.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
-      acqRes1.push_back(ac1);
-      acqRes2.push_back(ac2);
-      if (max1 < ac1) {
-        max1 = ac1;
-        index1 = i;
-      }
-      if (max2 < ac2) {
-        max2 = ac2;
-        index2 = i;
-      }
-    }
-
-    if (max1 > max2)
-      results.at(frqBinIndex) = acqRes1;
-    else
-      results.at(frqBinIndex) = acqRes2;
-  }
-  float peakSize{0};
-  int frequencyBinIndex{0}, codePhase{0};
-
-  for (int i = 0; i < results.size(); i++) {
-    float max_element = *std::max_element(results.at(i).begin(), results.at(i).end());
-    if (peakSize < max_element) {
-      peakSize = max_element;
-      frequencyBinIndex = i;
-      codePhase =
-          std::max_element(results.at(i).begin(), results.at(i).end()) - results.at(i).begin();
-    }
-  }
-  int samplesPerCodeChip = std::round(sampleFreq / codeFreqBasis);
-  int excludeRangeIndex1 = codePhase - samplesPerCodeChip;
-  int excludeRangeIndex2 = codePhase + samplesPerCodeChip;
-  int codePhaseRangeStart{0}, codePhaseRangeEnd{0};
-  bool inclusive = true;
-  if (excludeRangeIndex1 < 1) {
-    codePhaseRangeStart = excludeRangeIndex2;
-    codePhaseRangeEnd = samplesPerCode + excludeRangeIndex1;
-  } else if (excludeRangeIndex2 >= samplesPerCode) {
-    codePhaseRangeStart = excludeRangeIndex2 - samplesPerCode;
-    codePhaseRangeEnd = excludeRangeIndex1;
-  } else {
-    codePhaseRangeStart = excludeRangeIndex1;
-    codePhaseRangeEnd = excludeRangeIndex2;
-    inclusive = false;
-  }
-
-  float secondPeakSize{0};
-
-  for (int i = 0; i < samplesPerCode; i++) {
-    if (inclusive && (i >= codePhaseRangeStart && i < codePhaseRangeEnd)) {
-      if (secondPeakSize < results.at(frequencyBinIndex).at(i))
-        secondPeakSize = results.at(frequencyBinIndex).at(i);
-    } else if (!inclusive && i < codePhaseRangeStart || i > codePhaseRangeEnd) {
-      if (secondPeakSize < results.at(frequencyBinIndex).at(i))
-        secondPeakSize = results.at(frequencyBinIndex).at(i);
-    }
-  }
-
-  if (peakSize / secondPeakSize > 2.5) {
-    return AcqResults(PRN, 0, codePhase, peakSize / secondPeakSize);
+  if (channelStrength > 2.5) {
+    return AcqResults(PRN, 0, codePhase, channelStrength);
   } else
     return AcqResults();
 }
