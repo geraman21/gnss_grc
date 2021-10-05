@@ -12,19 +12,19 @@ namespace gr {
 namespace gnss {
 using input_type = float;
 using output_type = float;
-data_distributor::sptr data_distributor::make(unsigned int numSamples) {
+data_distributor::sptr data_distributor::make(float numSamples) {
   return gnuradio::make_block_sptr<data_distributor_impl>(numSamples);
 }
 
 /*
  * The private constructor
  */
-data_distributor_impl::data_distributor_impl(unsigned int numSamples)
+data_distributor_impl::data_distributor_impl(float numSamples)
     : gr::sync_block(
           "data_distributor",
           gr::io_signature::make(1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
-      samplesToSend{numSamples} {
+      samplesToSend{(unsigned int)numSamples} {
   lognSignal.reserve(samplesToSend);
   message_port_register_out(pmt::string_to_symbol("data_vector"));
   message_port_register_in(pmt::string_to_symbol("acquisition"));

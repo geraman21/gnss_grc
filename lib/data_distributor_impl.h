@@ -11,31 +11,28 @@
 #include <gnss/data_distributor.h>
 #include <vector>
 
-namespace gr
-{
-  namespace gnss
-  {
+namespace gr {
+namespace gnss {
 
-    class data_distributor_impl : public data_distributor
-    {
-    private:
-      unsigned long int test;
-      bool distribute = true;
-      unsigned int iterator = 0;
-      unsigned int samplesToSend{};
-      std::vector<float> lognSignal;
-      unsigned long int counter{};
+class data_distributor_impl : public data_distributor {
+private:
+  unsigned long int test;
+  bool distribute = true;
+  unsigned int iterator = 0;
+  unsigned int samplesToSend{};
+  std::vector<float> lognSignal;
+  unsigned long int counter{};
 
-    public:
-      data_distributor_impl(unsigned int numSamples);
-      ~data_distributor_impl();
+public:
+  data_distributor_impl(float numSamples);
+  ~data_distributor_impl();
 
-      // Where all the action really happens
-      int work(int noutput_items, gr_vector_const_void_star &input_items,
-               gr_vector_void_star &output_items);
-    };
+  // Where all the action really happens
+  int work(int noutput_items, gr_vector_const_void_star &input_items,
+           gr_vector_void_star &output_items);
+};
 
-  } // namespace gnss
+} // namespace gnss
 } // namespace gr
 
 #endif /* INCLUDED_GNSS_DATA_DISTRIBUTOR_IMPL_H */

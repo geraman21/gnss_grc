@@ -1,6 +1,6 @@
 id: gnss_nav_solution
 label: Nav Solution
-category: '[gnss]'
+category: "[gnss]"
 
 templates:
   imports: import gnss
@@ -11,7 +11,7 @@ templates:
 #     * id (makes the value accessible as keyname, e.g. in the make entry)
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
-parameters:
+# parameters:
 # - id: parametername_replace_me
 #   label: FIX ME:
 #   dtype: string
@@ -28,40 +28,39 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
-- label: Channel 0
-  dtype: float
-  optional: true
-- label: Channel 1
-  dtype: float
-  optional: true
-- label: Channel 2
-  dtype: float
-  optional: true
-- label: Channel 3
-  dtype: float
-  optional: true
-- label: Channel 4
-  dtype: float
-  optional: true
-- label: Channel 5
-  dtype: float
-  optional: true
-- label: Channel 6
-  dtype: float
-  optional: true
-- label: Channel 7
-  dtype: float
-  optional: true
-- domain: message
-  id: ephemeris
-  optional: true
-  hide: false
-
+  - label: Channel 0
+    dtype: float
+    optional: true
+  - label: Channel 1
+    dtype: float
+    optional: true
+  - label: Channel 2
+    dtype: float
+    optional: true
+  - label: Channel 3
+    dtype: float
+    optional: true
+  - label: Channel 4
+    dtype: float
+    optional: true
+  - label: Channel 5
+    dtype: float
+    optional: true
+  - label: Channel 6
+    dtype: float
+    optional: true
+  - label: Channel 7
+    dtype: float
+    optional: true
+  - domain: message
+    id: ephemeris
+    optional: true
+    hide: false
 
 outputs:
-- label: out
-  dtype: float
-  optional: true
+  - label: out
+    dtype: float
+    optional: true
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
