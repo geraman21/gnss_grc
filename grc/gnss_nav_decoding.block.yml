@@ -1,5 +1,5 @@
 id: gnss_nav_decoding
-label: nav_decoding
+label: Nav-data Provider
 category: "[gnss]"
 
 templates:
@@ -15,6 +15,7 @@ parameters:
   - id: channelNum
     label: Channel Number (0-7)
     dtype: int
+    default: 0
 
 #- id: ...
 #  label: ...

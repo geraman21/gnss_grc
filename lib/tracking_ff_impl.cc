@@ -166,10 +166,8 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       if (iterator == 0) {
         a = carrFreq * 2 * M_PI * samplePeriod;
         b = remCarrPhase;
-        // sincosf(a, &sina, &cosa);
         sina = sinf(a);
         cosa = cosf(a);
-        // sincosf(b, &resSin, &resCos);
         resSin = sinf(b);
         resCos = cosf(b);
       }

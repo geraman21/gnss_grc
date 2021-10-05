@@ -46,9 +46,9 @@ std::vector<int> generateCa(int prn, int chip_shift) {
     G1[lcv] = G1_register[0];
     G2[lcv] = G2_register[0];
 
-    feedback1 = G1_register[7] xor G1_register[0];
-    feedback2 = G2_register[8] xor G2_register[7] xor G2_register[4] xor G2_register[2] xor
-                G2_register[1] xor G2_register[0];
+    feedback1 = G1_register[7] ^ G1_register[0];
+    feedback2 = G2_register[8] ^ G2_register[7] ^ G2_register[4] ^ G2_register[2] ^
+                G2_register[1] ^ G2_register[0];
 
     for (lcv2 = 0; lcv2 < 9; lcv2++) {
       G1_register[lcv2] = G1_register[lcv2 + 1];
@@ -66,7 +66,7 @@ std::vector<int> generateCa(int prn, int chip_shift) {
 
   // Generate PRN from G1 and G2 Registers
   for (lcv = 0; lcv < code_length; lcv++) {
-    aux = G1[(lcv + chip_shift) % code_length] xor G2[delay];
+    aux = G1[(lcv + chip_shift) % code_length] ^ G2[delay];
     if (aux == true) {
       dest.at(lcv) = 1;
     } else {

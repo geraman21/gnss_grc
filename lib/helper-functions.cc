@@ -406,7 +406,6 @@ AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>
       caCodeFreqDom.at(k) = std::conj(caCodeFreqDom.at(k));
       // Generate local sine and cosine
       float sinCarr, cosCarr;
-      // sincosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex), &sinCarr, &cosCarr);
       sinCarr = sinf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
       cosCarr = cosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
       float I1 = sinCarr * longSignal.at(k);
@@ -578,10 +577,16 @@ AcqResults checkIfChannelPresent(int PRN, float ts, std::vector<std::complex<flo
     for (int k = 0; k < samplesPerCode; k++) {
       caCodeFreqDom.at(k) = std::conj(caCodeFreqDom.at(k));
       // Generate local sine and cosine
+<<<<<<< HEAD
       float sinCarr, cosCarr;
       // sincosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex), &sinCarr, &cosCarr);
       sinCarr = sinf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
       cosCarr = cosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
+=======
+      float sinCarr = sinf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
+      float cosCarr = cosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
+      // sincosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex), &sinCarr, &cosCarr);
+>>>>>>> a7adc3dc6f96c370bb1737f239da84d8ecc5ce4a
       float I1 = sinCarr * longSignal.at(k);
       float Q1 = cosCarr * longSignal.at(k);
       float I2 = sinCarr * longSignal.at(k + samplesPerCode);

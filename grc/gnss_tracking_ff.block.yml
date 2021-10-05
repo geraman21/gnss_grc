@@ -15,6 +15,7 @@ parameters:
   - id: _channelNum
     label: Channel Number (0 - 7)
     dtype: int
+    default: 0
   - id: _sampleFreq
     label: Sampling Freq
     dtype: float
