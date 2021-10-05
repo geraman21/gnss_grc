@@ -1,5 +1,5 @@
 id: gnss_decimator
-label: decimator
+label: Decimator
 category: '[gnss]'
 
 templates:
@@ -15,7 +15,7 @@ parameters:
 - id: sample_freq
   label: Sampling Frequency
   dtype: float
-  value: samp_rate
+  default: samp_rate
 #- id: ...
 #  label: ...
 #  dtype: ...

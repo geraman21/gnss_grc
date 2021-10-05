@@ -1,5 +1,5 @@
 id: gnss_ephemerides
-label: ephemerides
+label: Ephemerides
 category: '[gnss]'
 
 templates:
@@ -11,7 +11,7 @@ templates:
 #     * id (makes the value accessible as keyname, e.g. in the make entry)
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
-parameters:
+# parameters:
 # - id: parametername_replace_me
 #   label: FIX ME:
 #   dtype: string

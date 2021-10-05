@@ -90,10 +90,17 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
         //   std::cout << std::fixed << (double)absSamp / 38192.0 << std::endl;
         // }
 
-        int receivedPRN = std::stoi(pmt::symbol_to_string(tags.at(i).key));
+        int receivedPRN{};
+        try {
+          receivedPRN = std::stoi(pmt::symbol_to_string(tags.at(i).key));
+        } catch (const std::exception &e) {
+          std::cout << "Bad PRN received from Tag in nav_decoding_impl.cc" << std::endl;
+          std::cerr << e.what() << '\n';
+        }
 
         // Set PRN from the tag data
-        if (!std::isnan(receivedPRN) && PRN != receivedPRN) {
+        // if (!std::isnan(receivedPRN) && PRN != receivedPRN) {
+        if (receivedPRN != 0 && PRN != receivedPRN) {
           restartDataExtraction();
           PRN = receivedPRN;
         }

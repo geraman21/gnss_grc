@@ -15,11 +15,11 @@ parameters:
 - id: _channelNum
   label: Channel Number
   dtype: int
-  value: 0
+  default: 0
 - id: _sampleFreq
   label: Sampling Freq
   dtype: float
-  value: 0
+  default: samp_rate
 
 # - id: parametername_replace_me
 #   label: FIX ME:
