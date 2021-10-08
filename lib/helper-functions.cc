@@ -376,8 +376,9 @@ void custom_ifft(std::valarray<std::complex<double>> &x) {
   x /= x.size();
 }
 
-std::tuple<int, float> getChannelStrength(float ts, std::vector<std::complex<float>> &caCodeVector,
-                                          std::vector<float> &longSignal) {
+std::tuple<int, float> doParallelCodePhaseSearch(float ts,
+                                                 std::vector<std::complex<float>> &caCodeVector,
+                                                 std::vector<float> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
   int numberOfFrqBins = 29;
@@ -517,7 +518,7 @@ AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>
   int samplesPerCode = floor(1.0 / (ts * 1000));
   float codeFreqBasis = 1023000;
 
-  auto [codePhase, channelStrength] = getChannelStrength(ts, caCodeVector, longSignal);
+  auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, caCodeVector, longSignal);
 
   if (channelStrength > 2.5) {
     std::vector<int> caCode = generateCa(PRN);
@@ -564,7 +565,7 @@ AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>
 AcqResults checkIfChannelPresent(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
                                  std::vector<float> &longSignal) {
 
-  auto [codePhase, channelStrength] = getChannelStrength(ts, caCodeVector, longSignal);
+  auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, caCodeVector, longSignal);
 
   if (channelStrength > 2.5) {
     return AcqResults(PRN, 0, codePhase, channelStrength);

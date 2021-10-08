@@ -10,7 +10,6 @@
 # Project setup
 ########################################################################
 cmake_minimum_required(VERSION 3.8)
-project(gr-gnss CXX C)
 enable_testing()
 
 # Install to PyBOMBS target prefix if defined
