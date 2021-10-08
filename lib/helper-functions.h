@@ -34,8 +34,9 @@ std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double star
 void custom_fft(std::valarray<std::complex<double>> &x);
 void custom_ifft(std::valarray<std::complex<double>> &x);
 // Returns codePhase and strength of a Channel provided its caCodeVector
-std::tuple<int, float> getChannelStrength(float ts, std::vector<std::complex<float>> &caCodeVector,
-                                          std::vector<float> &longSignal);
+std::tuple<int, float> doParallelCodePhaseSearch(float ts,
+                                                 std::vector<std::complex<float>> &caCodeVector,
+                                                 std::vector<float> &longSignal);
 AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
                               std::vector<float> &longSignal);
 AcqResults checkIfChannelPresent(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
