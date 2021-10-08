@@ -13,7 +13,7 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
   - id: sample_freq
-    label: Sampling Frequency
+    label: Sampling Freq.
     dtype: float
     default: samp_rate
 #- id: ...

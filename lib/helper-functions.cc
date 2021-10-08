@@ -383,7 +383,7 @@ std::tuple<int, float> getChannelStrength(float ts, std::vector<std::complex<flo
   int numberOfFrqBins = 29;
   std::vector<int> frqBins(numberOfFrqBins, 0);
   std::vector<std::vector<float>> results(numberOfFrqBins);
-  float IF = 9.548e6;
+  float IF = fmod(1575.42e6, sampleFreq);
   // int samplesPerCode = ceil(sampleFreq / 1000);
   // float ts = 1.0 / sampleFreq;
   float codeFreqBasis = 1023000;
