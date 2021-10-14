@@ -570,5 +570,5 @@ AcqResults checkIfChannelPresent(int PRN, float ts, std::vector<std::complex<flo
   if (channelStrength > 2.5) {
     return AcqResults(PRN, 0, codePhase, channelStrength);
   } else
-    return AcqResults();
+    return AcqResults(0, 0, 0, channelStrength);
 }

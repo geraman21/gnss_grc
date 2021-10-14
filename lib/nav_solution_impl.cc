@@ -33,7 +33,6 @@ nav_solution_impl::nav_solution_impl()
     Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
     if (data_object.channelNumber != -1) {
       ephemerides.at(data_object.channelNumber) = data_object;
-      restartIterator = true;
     }
   });
 }
@@ -99,19 +98,12 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
     //   navTest++;
     // }
     if (startNavigation) {
-      // std::cout.precision(9);
-      // for (auto i : active_input_items) {
-      //   std::cout << std::fixed << "   " << i;
-      // }
       pseudoRanges = getPseudoRanges(active_input_items, startOffset, c);
-
       std::vector<SatPosition> satPositions(active_input_items.size());
       for (int i = 0; i < active_input_items.size(); i++) {
         double transmitTime = active_ephemerides.at(i).TOW * 1.0 + towOffsets.at(i) * 1.0;
         satPositions.at(i) = SatPosition(transmitTime, active_ephemerides.at(i));
         pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
-        // std::cout << std::fixed << "   " << satPositions.at(i).pos1 << "   "
-        //           << satPositions.at(i).pos2 << "   " << satPositions.at(i).pos3 << std::endl;
       }
       std::cout << std::endl;
 

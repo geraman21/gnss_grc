@@ -166,7 +166,7 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
       this->add_item_tag(0, tag);
     }
 
-    result = (double)absSampleCount / (sampleFreq / 1000);
+    result = (double)absSampleCount / (sampleFreq / 1000.0);
     // if (result > 0 && channel == 0) {
     //   std::cout.precision(16);
     //   std::cout << "   " << std::fixed << result;

@@ -44,7 +44,9 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, int a_channelNum)
     std::cout << "(  ";
     for (int PRN = 1; PRN <= 32; PRN++) {
       AcqResults result = checkIfChannelPresent(PRN, ts, complexCaTable.at(PRN - 1), longSignal);
-      result.PRN ? std::cout << PRN << "   " : std::cout << ".   ";
+      std::cout.precision(1);
+      result.PRN ? std::cout << std::fixed << PRN << " (" << result.peakMetric << ")   "
+                 : std::cout << std::fixed << ".  ";
       if (result.PRN)
         acqResults.push_back(result);
     }

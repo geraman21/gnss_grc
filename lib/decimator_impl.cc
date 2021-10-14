@@ -47,11 +47,6 @@ int decimator_impl::work(int noutput_items, gr_vector_const_void_star &input_ite
   tags.clear();
   this->get_tags_in_range(tags, 0, nread, nread + ninput_items);
 
-  // if (tags.size() > 0 && test < 20) {
-  //   std::cout << tags.size() << "     noutput items:   " << ninput_items << std::endl;
-  //   test++;
-  // }
-
   for (int j = 0; j < noutput_items; j++) {
     for (int i = j * decimation; i < j * decimation + decimation; i++) {
       if (in[i] != 0) {
