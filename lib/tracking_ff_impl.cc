@@ -49,6 +49,9 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq)
     } else if (pmt::symbol_to_string(msg_key) == "acq_start") {
       if (PRN == acqResult.PRN)
         handleAcqStart(acqResult);
+    } else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
+      if (PRN == acqResult.PRN)
+        haltTracking();
     }
   });
   longSignal.reserve(11000 * samplesPerCode);
@@ -96,6 +99,15 @@ void tracking_ff_impl::reset() {
   codeFreq = codeFreqBasis;
   iterator = 0;
   Q_E = I_E = Q_P = I_P = Q_L = I_L = 0.0;
+}
+
+void tracking_ff_impl::haltTracking() {
+  restartAcquisition = false;
+  collectSamples = false;
+  doTracking = false;
+  totalSamples = 0;
+  PRN = 0;
+  reset();
 }
 
 int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_items,

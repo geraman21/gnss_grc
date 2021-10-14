@@ -30,16 +30,15 @@ data_distributor_impl::data_distributor_impl(float numSamples)
   message_port_register_in(pmt::string_to_symbol("acquisition"));
   set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg) {
     auto msg_key = pmt::car(msg);
-    auto mag_val = pmt::cdr(msg);
-    if (pmt::symbol_to_string(msg_key) == "acq_start") {
+    if (pmt::symbol_to_string(msg_key) == "acq_restart" && !acqInProgress) {
       distribute = true;
-
+      acqInProgress = true;
       iterator = 0;
       test = 0;
       lognSignal.clear();
       lognSignal.reserve(samplesToSend);
-    } else {
-      // std::cout << "DISTRIBUTOR == " << test << std::endl;
+    } else if (pmt::symbol_to_string(msg_key) == "acq_result" && acqInProgress) {
+      acqInProgress = false;
     }
   });
 }
@@ -55,14 +54,6 @@ int data_distributor_impl::work(int noutput_items, gr_vector_const_void_star &in
   output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
   for (int i = 0; i < noutput_items; i++) {
-
-    // if (counter == 18000 * 38192)
-    // {
-    //   distribute = true;
-    //   iterator = 0;
-    //   lognSignal.clear();
-    //   lognSignal.reserve(samplesToSend);
-    // }
 
     if (distribute && iterator < samplesToSend) {
       lognSignal.push_back(in[i]);

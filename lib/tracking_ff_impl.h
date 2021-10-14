@@ -79,6 +79,7 @@ private:
   void reset();
   void handleAcqStart(AcqResults acqResult);
   void startReaquisition();
+  void haltTracking();
 
 public:
   tracking_ff_impl(int _channelNum, float _sampleFreq);

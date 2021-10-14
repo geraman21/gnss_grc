@@ -18,6 +18,7 @@ class data_distributor_impl : public data_distributor {
 private:
   unsigned long int test;
   bool distribute = true;
+  bool acqInProgress = false;
   unsigned int iterator = 0;
   unsigned int samplesToSend{};
   std::vector<float> lognSignal;

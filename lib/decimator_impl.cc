@@ -64,13 +64,6 @@ int decimator_impl::work(int noutput_items, gr_vector_const_void_star &input_ite
       tag.key = tags.at(j).key;
       tag.value = tags.at(j).value;
       this->add_item_tag(0, tag);
-      // if (in[valueIndex] > 0 && test < 100) {
-      //   std::cout.precision(9);
-      //   std::cout << std::fixed << (double)pmt::to_uint64(tags.at(j).value) / 38192.0 <<
-      //   std::endl;
-      // }
-      // if (in[valueIndex] > 0)
-      //   test++;
     }
     out[j] = in[valueIndex];
   }

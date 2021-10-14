@@ -85,11 +85,6 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
       // Check if Channel PRN has been changed
       if (tags.size() == ninput_items) {
-        // if (i == j * 500) {
-        //   uint64_t absSamp = pmt::to_uint64(tags.at(i).value);
-        //   std::cout.precision(16);
-        //   std::cout << std::fixed << (double)absSamp / 38192.0 << std::endl;
-        // }
 
         int receivedPRN{};
         try {

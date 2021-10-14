@@ -34,6 +34,7 @@ channel_starter_impl::channel_starter_impl(int attempts, float s_sampleFreq)
   longSignal.reserve(11 * samplesPerCode);
   ts = 1.0 / sampleFreq;
   attemptsLeft.resize(33, 0);
+  std::fill(attemptsLeft.begin(), attemptsLeft.end(), attemptsNum);
 
   set_msg_handler(pmt::mp("data_vector"), [this](const pmt::pmt_t &msg) {
     auto msg_key = pmt::car(msg);
@@ -42,7 +43,6 @@ channel_starter_impl::channel_starter_impl(int attempts, float s_sampleFreq)
     std::cout << "Starter  working  PRN:   " << receivedPRN << std::endl;
     if (PRN != receivedPRN) {
       PRN = receivedPRN;
-      attemptsLeft.at(PRN) = attemptsNum;
       complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
     }
     if (attemptsLeft.at(PRN) > 0) {
@@ -53,6 +53,12 @@ channel_starter_impl::channel_starter_impl(int attempts, float s_sampleFreq)
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
       message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_start"), pmt));
       attemptsLeft.at(PRN)--;
+    } else {
+      AcqResults acqResult = AcqResults(PRN, 0, 0, 0);
+      auto size = sizeof(AcqResults);
+      auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
+      message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_restart"), pmt));
+      attemptsLeft.at(PRN) = attemptsNum;
     }
   });
 }

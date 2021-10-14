@@ -49,17 +49,24 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, int a_channelNum)
         acqResults.push_back(result);
     }
     std::cout << ")" << std::endl;
-    std::sort(acqResults.begin(), acqResults.end(),
-              [](AcqResults a, AcqResults b) { return (a.peakMetric > b.peakMetric); });
-    acqResults.resize(channelNum);
-    doColdStart = false;
+    if (acqResults.size() > 0) {
+      std::sort(acqResults.begin(), acqResults.end(),
+                [](AcqResults a, AcqResults b) { return (a.peakMetric > b.peakMetric); });
+      acqResults.resize(channelNum);
+      doColdStart = false;
 
-    // Send active channels to respective tracking block
-    for (int i = 0; i < acqResults.size(); i++) {
-      acqResults.at(i).channelNumber = i;
+      // Send active channels to respective tracking block
+      for (int i = 0; i < acqResults.size(); i++) {
+        acqResults.at(i).channelNumber = i;
+        auto size = sizeof(AcqResults);
+        auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults.at(i)), size);
+        message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
+      }
+    } else {
       auto size = sizeof(AcqResults);
-      auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults.at(i)), size);
-      message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
+      AcqResults emptyResult = AcqResults();
+      auto pmt = pmt::make_blob(reinterpret_cast<void *>(&emptyResult), size);
+      message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_restart"), pmt));
     }
   });
 
