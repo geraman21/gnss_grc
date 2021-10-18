@@ -100,18 +100,7 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
           restartDataExtraction();
           PRN = receivedPRN;
         }
-      } else if (travelTimeQue.size() > samplesForPreamble) {
-        travelTimeQue.pop_front();
       }
-
-      // Add data to travel time queue and Collect enough data into a buffer
-      // to prepare nav bits for Ephemeris later
-
-      in[i] == 0  ? travelTimeQue.push_back(0)
-      : in[i] > 0 ? travelTimeQue.push_back(1)
-                  : travelTimeQue.push_back(-1);
-
-      // Gather Nav Bits for Ephemeris Min 5 subframes is required
 
       if (gatherNavBits) {
         if (iterator < subframeStart + 1500 * 20 - 1) {

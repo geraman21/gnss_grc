@@ -73,9 +73,8 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   codePhaseStep = codeFreq * samplePeriod;
   blksize = ceil(codeLength / codePhaseStep);
   restartAcquisition = false;
-  float totalSamplesFromStart = totalSamples - acqResult.codePhase;
-  float fullMsPassed = ceil(totalSamplesFromStart / blksize);
-  receivedCodePhase = fullMsPassed * blksize - totalSamplesFromStart;
+  unsigned long totalSamplesFromStart = totalSamples - acqResult.codePhase;
+  receivedCodePhase = blksize - (totalSamplesFromStart % blksize);
   codePhase = receivedCodePhase;
   carrFreq = acqResult.carrFreq;
   carrFreqBasis = acqResult.carrFreq;
