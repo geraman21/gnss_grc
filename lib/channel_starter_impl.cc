@@ -46,9 +46,12 @@ channel_starter_impl::channel_starter_impl(int attempts, float s_sampleFreq)
       complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
     }
     if (attemptsLeft.at(PRN) > 0) {
+      std::cout << "PRN:   " << receivedPRN << "    attempts left:  " << attemptsLeft.at(PRN)
+                << std::endl;
       const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));
       longSignal.assign(data, data + longSignal.capacity());
       AcqResults acqResult = performAcquisition(PRN, ts, complexCaVector, longSignal);
+      acqResult.PRN = PRN;
       auto size = sizeof(AcqResults);
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
       message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_start"), pmt));

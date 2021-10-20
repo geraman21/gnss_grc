@@ -10,17 +10,16 @@
 
 #include <vector>
 
-class AcqResults
-{
+class AcqResults {
 
 public:
-    AcqResults(int _PRN, float _carrFreq, float _codePhase, float _peakMetric);
-    AcqResults();
-    float carrFreq{};
-    float codePhase{};
-    float peakMetric{};
-    int PRN{};
-    int channelNumber{};
+  AcqResults(int _PRN, float _carrFreq, float _codePhase, float _peakMetric);
+  AcqResults();
+  float carrFreq{};
+  float codePhase{};
+  float peakMetric{};
+  int PRN{};
+  int channelNumber = -1;
 };
 
 #endif /* INCLUDED_GNSS_TRACKING_FF_IMPL_H */
