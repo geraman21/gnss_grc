@@ -67,12 +67,18 @@ private:
   float oldCodeError = 0;
   float earlyLateSpc = 0.5;
   float chippingRate = 1023000;
-  short pllNoiseBandwidth = 25;
-  short dllNoiseBandwidth = 2;
-  float pllDampingRatio = 0.7;
-  float dllDampingRatio = 0.7;
-  float loopGainCarr = 0.25;
-  float loopGainCode = 1;
+  // float pllNoiseBandwidth = 25;
+  // float dllNoiseBandwidth = 2;
+  // float pllDampingRatio = 0.7;
+  // float dllDampingRatio = 0.7;
+  // float loopGainCarr = 0.25;
+  // float loopGainCode = 1;
+  float pllNoiseBandwidth;
+  float dllNoiseBandwidth;
+  float pllDampingRatio;
+  float dllDampingRatio;
+  float loopGainCarr;
+  float loopGainCode;
 
   float tau1carr, tau2carr;
   float tau1code, tau2code;
@@ -82,7 +88,8 @@ private:
   void haltTracking();
 
 public:
-  tracking_ff_impl(int _channelNum, float _sampleFreq);
+  tracking_ff_impl(int _channelNum, float _sampleFreq, float pll_nbw, float pll_dr, float pll_lg,
+                   float dll_nbw, float dll_dr, float dll_lg);
   tracking_ff_impl();
   ~tracking_ff_impl();
 

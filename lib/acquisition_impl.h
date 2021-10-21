@@ -23,6 +23,7 @@ private:
   bool doColdStart = true;
   float sampleFreq;
   double ts;
+  float IF;
   unsigned int iterator = 0;
   float codeFreqBasis = 1023000;
   float codeLength = 1023;
@@ -33,7 +34,7 @@ private:
   std::vector<AcqResults> acqResults;
 
 public:
-  acquisition_impl(float a_sampleFreq, int a_channelNum);
+  acquisition_impl(float a_sampleFreq, float im_freq, int a_channelNum);
   acquisition_impl();
   ~acquisition_impl();
 

@@ -104,7 +104,10 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
       if (gatherNavBits) {
         if (iterator < subframeStart + 1500 * 20 - 1) {
-          in[i] > 0 ? buffer[iterator] = 1 : buffer[iterator] = -1;
+          if (in[i] == 0)
+            buffer[iterator] = 0;
+          else
+            in[i] > 0 ? buffer[iterator] = 1 : buffer[iterator] = -1;
         }
 
         // Find the start of a Sub-frame to generate correct nav-bits

@@ -31,7 +31,7 @@ public:
    * class. gnss::channel_starter::make is the public interface for
    * creating new instances.
    */
-  static sptr make(int attempts, float s_sampleFreq);
+  static sptr make(float s_sampleFreq, float im_freq, int attempts);
 };
 
 } // namespace gnss

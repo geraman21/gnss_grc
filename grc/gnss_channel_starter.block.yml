@@ -4,7 +4,7 @@ category: "[gnss]"
 
 templates:
   imports: import gnss
-  make: gnss.channel_starter(${attempts}, ${s_sampleFreq})
+  make: gnss.channel_starter(${s_sampleFreq}, ${im_freq}, ${attempts})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -13,13 +13,18 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
   - id: s_sampleFreq
-    label: Sampling Frequency
+    label: Sampling Freq.
     dtype: float
     default: samp_rate
+  - id: im_freq
+    label: Intermediate Freq.
+    dtype: float
+    default: im_freq
   - id: attempts
     label: Attempts
     dtype: int
     default: 10
+
 #- id: ...
 #  label: ...
 #  dtype: ...

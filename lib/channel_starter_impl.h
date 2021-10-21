@@ -19,6 +19,7 @@ class channel_starter_impl : public channel_starter {
 private:
   int PRN;
   int attemptsNum;
+  float IF;
   std::vector<int> attemptsLeft;
   float sampleFreq;
   float ts;
@@ -29,7 +30,7 @@ private:
   std::vector<float> longSignal;
 
 public:
-  channel_starter_impl(int attempts, float s_sampleFreq);
+  channel_starter_impl(float s_sampleFreq, float im_freq, int attempts);
   ~channel_starter_impl();
 
   // Where all the action really happens

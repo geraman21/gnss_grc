@@ -4,7 +4,7 @@ category: "[gnss]"
 
 templates:
   imports: import gnss
-  make: gnss.acquisition(${a_sampleFreq}, ${a_channelNum})
+  make: gnss.acquisition(${a_sampleFreq}, ${im_freq}, ${a_channelNum})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -16,10 +16,15 @@ parameters:
     label: Sampling Freq.
     dtype: float
     default: samp_rate
+  - id: im_freq
+    label: Intermediate Freq.
+    dtype: float
+    default: im_freq
   - id: a_channelNum
     label: Number of Channels
     dtype: int
     default: 0
+
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
 #  Keys include:

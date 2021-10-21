@@ -33,6 +33,9 @@ nav_solution_impl::nav_solution_impl()
     Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
     if (data_object.channelNumber != -1) {
       ephemerides.at(data_object.channelNumber) = data_object;
+      std::cout << "============================" << std::endl;
+      data_object.printEphemeris();
+      std::cout << "============================" << std::endl;
     }
   });
 }

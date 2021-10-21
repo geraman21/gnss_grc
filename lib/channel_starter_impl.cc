@@ -15,19 +15,19 @@ namespace gr {
 namespace gnss {
 
 using input_type = float;
-channel_starter::sptr channel_starter::make(int attempts, float s_sampleFreq) {
-  return gnuradio::make_block_sptr<channel_starter_impl>(attempts, s_sampleFreq);
+channel_starter::sptr channel_starter::make(float s_sampleFreq, float im_freq, int attempts) {
+  return gnuradio::make_block_sptr<channel_starter_impl>(s_sampleFreq, im_freq, attempts);
 }
 
 /*
  * The private constructor
  */
-channel_starter_impl::channel_starter_impl(int attempts, float s_sampleFreq)
+channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, int attempts)
     : gr::sync_block(
           "channel_starter",
           gr::io_signature::make(0 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(0, 0, 0)),
-      attemptsNum{attempts}, sampleFreq{s_sampleFreq} {
+      attemptsNum{attempts}, sampleFreq{s_sampleFreq}, IF{im_freq} {
   message_port_register_in(pmt::string_to_symbol("data_vector"));
   message_port_register_out(pmt::string_to_symbol("acquisition"));
   samplesPerCode = round(sampleFreq / (codeFreqBasis / codeLength));
@@ -50,7 +50,7 @@ channel_starter_impl::channel_starter_impl(int attempts, float s_sampleFreq)
                 << std::endl;
       const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));
       longSignal.assign(data, data + longSignal.capacity());
-      AcqResults acqResult = performAcquisition(PRN, ts, complexCaVector, longSignal);
+      AcqResults acqResult = performAcquisition(PRN, ts, IF, complexCaVector, longSignal);
       acqResult.PRN = PRN;
       auto size = sizeof(AcqResults);
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);

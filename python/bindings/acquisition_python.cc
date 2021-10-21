@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(1)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(acquisition.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(e9b379220b8e3fa216f9e80a2769a04f)                     */
+/* BINDTOOL_HEADER_FILE_HASH(ebb23ac189a6da12ffd24e6810510467)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -35,7 +35,7 @@ void bind_acquisition(py::module &m) {
       m, "acquisition", D(acquisition))
 
       .def(py::init(&acquisition::make), py::arg("a_sampleFreq"), py::arg("a_channelNum"),
-           D(acquisition, make))
+           py::arg("im_freq"), D(acquisition, make))
 
       ;
 }

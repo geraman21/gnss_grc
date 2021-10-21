@@ -376,17 +376,14 @@ void custom_ifft(std::valarray<std::complex<double>> &x) {
   x /= x.size();
 }
 
-std::tuple<int, float> doParallelCodePhaseSearch(float ts,
+std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
                                                  std::vector<std::complex<float>> &caCodeVector,
                                                  std::vector<float> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
-  int numberOfFrqBins = 29;
+  int numberOfFrqBins = 100;
   std::vector<int> frqBins(numberOfFrqBins, 0);
   std::vector<std::vector<float>> results(numberOfFrqBins);
-  float IF = fmod(1575.42e6, sampleFreq);
-  // int samplesPerCode = ceil(sampleFreq / 1000);
-  // float ts = 1.0 / sampleFreq;
   float codeFreqBasis = 1023000;
 
   gr::fft::fft_complex_fwd p1_fft(samplesPerCode, 1);
@@ -400,7 +397,7 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts,
 
   for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++) {
     //  Generate carrier wave frequency grid (0.5kHz step)
-    frqBins.at(frqBinIndex) = IF - 7000 + 0.5e3 * frqBinIndex;
+    frqBins.at(frqBinIndex) = IF - 10000 + 0.2e3 * frqBinIndex;
     std::vector<std::complex<float>> IQSignal1(samplesPerCode);
     std::vector<std::complex<float>> IQSignal2(samplesPerCode);
     for (int k = 0; k < samplesPerCode; k++) {
@@ -512,13 +509,14 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts,
 }
 
 // Acquisition for a certain PRN
-AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
+AcqResults performAcquisition(int PRN, float ts, float IF,
+                              std::vector<std::complex<float>> &caCodeVector,
                               std::vector<float> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
   float codeFreqBasis = 1023000;
 
-  auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, caCodeVector, longSignal);
+  auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
 
   if (channelStrength > 2.5) {
     std::vector<int> caCode = generateCa(PRN);
@@ -562,10 +560,11 @@ AcqResults performAcquisition(int PRN, float ts, std::vector<std::complex<float>
 }
 
 // Acquisition for a certain PRN
-AcqResults checkIfChannelPresent(int PRN, float ts, std::vector<std::complex<float>> &caCodeVector,
+AcqResults checkIfChannelPresent(int PRN, float ts, float IF,
+                                 std::vector<std::complex<float>> &caCodeVector,
                                  std::vector<float> &longSignal) {
 
-  auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, caCodeVector, longSignal);
+  auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
 
   if (channelStrength > 2.5) {
     return AcqResults(PRN, 0, codePhase, channelStrength);

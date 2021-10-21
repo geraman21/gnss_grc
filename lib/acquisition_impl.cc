@@ -16,19 +16,19 @@ namespace gr {
 namespace gnss {
 
 using input_type = float;
-acquisition::sptr acquisition::make(float a_sampleFreq, int a_channelNum) {
-  return gnuradio::make_block_sptr<acquisition_impl>(a_sampleFreq, a_channelNum);
+acquisition::sptr acquisition::make(float a_sampleFreq, float im_freq, int a_channelNum) {
+  return gnuradio::make_block_sptr<acquisition_impl>(a_sampleFreq, im_freq, a_channelNum);
 }
 
 /*
  * The private constructor
  */
-acquisition_impl::acquisition_impl(float a_sampleFreq, int a_channelNum)
+acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_channelNum)
     : gr::sync_block(
           "acquisition",
           gr::io_signature::make(0 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(0, 0, 0)),
-      sampleFreq{a_sampleFreq}, channelNum{a_channelNum} {
+      sampleFreq{a_sampleFreq}, channelNum{a_channelNum}, IF{im_freq} {
   message_port_register_in(pmt::string_to_symbol("data_vector"));
   message_port_register_out(pmt::string_to_symbol("acquisition"));
   samplesPerCode = round(sampleFreq / (codeFreqBasis / codeLength));
@@ -43,7 +43,8 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, int a_channelNum)
     std::cout << "Acquisition Cold Start Initiated" << std::endl;
     std::cout << "(  ";
     for (int PRN = 1; PRN <= 32; PRN++) {
-      AcqResults result = checkIfChannelPresent(PRN, ts, complexCaTable.at(PRN - 1), longSignal);
+      AcqResults result =
+          checkIfChannelPresent(PRN, ts, IF, complexCaTable.at(PRN - 1), longSignal);
       std::cout.precision(1);
       result.PRN ? std::cout << std::fixed << PRN << " (" << result.peakMetric << ")   "
                  : std::cout << result.peakMetric << std::fixed << "    ";

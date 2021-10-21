@@ -11,22 +11,19 @@
 #include <gnss/api.h>
 #include <gnuradio/sync_block.h>
 
-namespace gr
-{
-  namespace gnss
-  {
+namespace gr {
+namespace gnss {
 
-    /*!
+/*!
  * \brief <+description of block+>
  * \ingroup gnss
  *
  */
-    class GNSS_API acquisition : virtual public gr::sync_block
-    {
-    public:
-      typedef std::shared_ptr<acquisition> sptr;
+class GNSS_API acquisition : virtual public gr::sync_block {
+public:
+  typedef std::shared_ptr<acquisition> sptr;
 
-      /*!
+  /*!
    * \brief Return a shared_ptr to a new instance of gnss::acquisition.
    *
    * To avoid accidental use of raw pointers, gnss::acquisition's
@@ -34,10 +31,10 @@ namespace gr
    * class. gnss::acquisition::make is the public interface for
    * creating new instances.
    */
-      static sptr make(float a_sampleFreq, int a_channelNum);
-    };
+  static sptr make(float a_sampleFreq, float im_freq, int a_channelNum);
+};
 
-  } // namespace gnss
+} // namespace gnss
 } // namespace gr
 
 #endif /* INCLUDED_GNSS_ACQUISITION_H */
