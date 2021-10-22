@@ -32,6 +32,7 @@ private:
   std::vector<std::vector<std::complex<float>>> caCodesTable;
   std::vector<float> longSignal;
   std::vector<AcqResults> acqResults;
+  std::vector<int> channels;
 
 public:
   acquisition_impl(float a_sampleFreq, float im_freq, int a_channelNum);

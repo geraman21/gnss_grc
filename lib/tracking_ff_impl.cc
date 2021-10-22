@@ -53,8 +53,12 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
       PRN = acqResult.PRN;
       startReaquisition();
     } else if (pmt::symbol_to_string(msg_key) == "acq_start") {
-      if (PRN == acqResult.PRN)
-        handleAcqStart(acqResult);
+      if (PRN == acqResult.PRN) {
+        if (acqResult.peakMetric > 0)
+          handleAcqStart(acqResult);
+        else
+          startReaquisition();
+      }
     } else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
       if (PRN == acqResult.PRN)
         haltTracking();
@@ -81,6 +85,10 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   restartAcquisition = false;
   unsigned long totalSamplesFromStart = totalSamples - acqResult.codePhase;
   receivedCodePhase = blksize - (totalSamplesFromStart % blksize);
+  // std::cout << "Received PRN:   " << acqResult.PRN << std::endl;
+  // std::cout << "Received Peak Metric:   " << acqResult.peakMetric << std::endl;
+  // std::cout << "Received code phase:   " << receivedCodePhase << std::endl;
+  // std::cout << "Received Carr freq:   " << acqResult.carrFreq << std::endl;
   codePhase = receivedCodePhase;
   carrFreq = acqResult.carrFreq;
   carrFreqBasis = acqResult.carrFreq;

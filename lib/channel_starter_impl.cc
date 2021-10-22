@@ -41,11 +41,11 @@ channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, in
     auto msg_val = pmt::cdr(msg);
     int receivedPRN = pmt::to_long(msg_key);
     std::cout << "Starter  working  PRN:   " << receivedPRN << std::endl;
-    if (PRN != receivedPRN) {
+    if (PRN != receivedPRN && PRN != 0) {
       PRN = receivedPRN;
       complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
     }
-    if (attemptsLeft.at(PRN) > 0) {
+    if (attemptsLeft.at(PRN) > 0 && PRN != 0) {
       std::cout << "PRN:   " << receivedPRN << "    attempts left:  " << attemptsLeft.at(PRN)
                 << std::endl;
       const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));

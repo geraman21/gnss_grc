@@ -36,6 +36,7 @@ void Ephemeris::printEphemeris() {
   std::cout << "omegaDot : " << omegaDot << std::endl;
   std::cout << " IODE_sf3: " << IODE_sf3 << std::endl;
   std::cout << "iDot : " << iDot << std::endl;
+  std::cout << "TOW : " << TOW << std::endl;
 }
 
 Ephemeris::Ephemeris(std::vector<int> &navBits, int channel) {

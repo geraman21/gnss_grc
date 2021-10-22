@@ -17,6 +17,7 @@ namespace gnss {
 class data_distributor_impl : public data_distributor {
 private:
   unsigned long int test;
+  int PRN{};
   bool distribute = true;
   bool acqInProgress = false;
   unsigned int iterator = 0;

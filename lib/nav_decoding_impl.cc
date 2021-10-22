@@ -60,7 +60,6 @@ void nav_decoding_impl::restartDataExtraction() {
   std::cout << "data extraction restarted" << std::endl;
   iterator = 0;
   result = 0;
-  travelTimeQue.clear();
   gatherNavBits = true;
 }
 
@@ -105,7 +104,7 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
       if (gatherNavBits) {
         if (iterator < subframeStart + 1500 * 20 - 1) {
           if (in[i] == 0)
-            buffer[iterator] = 0;
+            iterator = 0;
           else
             in[i] > 0 ? buffer[iterator] = 1 : buffer[iterator] = -1;
         }

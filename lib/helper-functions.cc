@@ -381,7 +381,9 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
                                                  std::vector<float> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
-  int numberOfFrqBins = 100;
+  int dopplerShift = 15000;
+  int frequencyStep = 200;
+  int numberOfFrqBins = dopplerShift * 2 / frequencyStep;
   std::vector<int> frqBins(numberOfFrqBins, 0);
   std::vector<std::vector<float>> results(numberOfFrqBins);
   float codeFreqBasis = 1023000;
@@ -397,7 +399,7 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
 
   for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++) {
     //  Generate carrier wave frequency grid (0.5kHz step)
-    frqBins.at(frqBinIndex) = IF - 10000 + 0.2e3 * frqBinIndex;
+    frqBins.at(frqBinIndex) = IF - dopplerShift + frequencyStep * frqBinIndex;
     std::vector<std::complex<float>> IQSignal1(samplesPerCode);
     std::vector<std::complex<float>> IQSignal2(samplesPerCode);
     for (int k = 0; k < samplesPerCode; k++) {
@@ -517,8 +519,8 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
   float codeFreqBasis = 1023000;
 
   auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
-
-  if (channelStrength > 2.5) {
+  std::cout << "Peak Metric   " << channelStrength << std::endl;
+  if (channelStrength > 2.0) {
     std::vector<int> caCode = generateCa(PRN);
     std::vector<std::complex<float>> xCarrier;
     xCarrier.reserve(samplesPerCode * 10);
@@ -566,7 +568,7 @@ AcqResults checkIfChannelPresent(int PRN, float ts, float IF,
 
   auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
 
-  if (channelStrength > 2.5) {
+  if (channelStrength > 3.0) {
     return AcqResults(PRN, 0, codePhase, channelStrength);
   } else
     return AcqResults(0, 0, 0, channelStrength);
