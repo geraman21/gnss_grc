@@ -33,6 +33,7 @@ private:
   int channelNum;
   bool restartTracking{false};
   int msForQualityCheck = 1000;
+  int msToStabilize = 500;
   int msCount{};
   int signChangeCount{};
   bool sendTag = false;

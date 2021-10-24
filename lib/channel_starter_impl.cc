@@ -41,11 +41,12 @@ channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, in
     auto msg_val = pmt::cdr(msg);
     int receivedPRN = pmt::to_long(msg_key);
     std::cout << "Starter  working  PRN:   " << receivedPRN << std::endl;
-    if (PRN != receivedPRN && PRN != 0) {
+    if (PRN != receivedPRN) {
       PRN = receivedPRN;
-      complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
+      if (PRN != 0)
+        complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
     }
-    if (attemptsLeft.at(PRN) > 0 && PRN != 0) {
+    if (attemptsLeft.at(PRN) > 0 && receivedPRN != 0) {
       std::cout << "PRN:   " << receivedPRN << "    attempts left:  " << attemptsLeft.at(PRN)
                 << std::endl;
       const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));
@@ -54,6 +55,8 @@ channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, in
       acqResult.PRN = PRN;
       auto size = sizeof(AcqResults);
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
+      std::cout << "Channle starter sent new params for PRN:  " << PRN
+                << "    peakMetric:  " << acqResult.peakMetric << std::endl;
       message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_start"), pmt));
       attemptsLeft.at(PRN)--;
     } else {

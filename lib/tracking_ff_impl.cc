@@ -59,10 +59,11 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
         else
           startReaquisition();
       }
-    } else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
-      if (PRN == acqResult.PRN)
-        haltTracking();
     }
+    // else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
+    //   if (PRN == acqResult.PRN)
+    //     haltTracking();
+    // }
   });
   longSignal.reserve(11000 * samplesPerCode);
   paddedCaTable.reserve(33);
@@ -102,6 +103,8 @@ void tracking_ff_impl::startReaquisition() {
   totalSamples = 0;
 }
 void tracking_ff_impl::reset() {
+  msCount = 0;
+  signChangeCount = 0;
   remCodePhase = 0.0;
   remCarrPhase = 0.0;
   oldCarrNco = 0.0;
@@ -130,11 +133,13 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
   // Restart the channel if output data bitrate is above 50hz
   // Allow 200ms for channel to stabilize
-  if (msCount >= msForQualityCheck + 200) {
-    if (signChangeCount > msForQualityCheck / 20) {
+  if (msCount >= msForQualityCheck + msToStabilize) {
+    if (signChangeCount > msForQualityCheck / 20 || signChangeCount < 10) {
       std::cout << "PRN:  " << PRN << "  Quality Check failed, restarting..." << std::endl;
       startReaquisition();
     }
+    // std::cout << "Quality Results:   " << signChangeCount << "     out of    "
+    //           << msForQualityCheck / 20 << std::endl;
     msCount = 0;
     signChangeCount = 0;
   }
@@ -168,6 +173,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       if (codePhase == 0) {
         reset();
         doTracking = true;
+        // std::cout << "PRN    " << PRN << "   alligned tracking started" << std::endl;
       }
     }
 
@@ -216,7 +222,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       // and reset iterator else incr iterator
       if (iterator == blksize - 1) {
         // quality check whether we receive a real 50hz signal, allow 200ms for channel to stabilize
-        if (signbit(prevOutput) != signbit(I_P) && msCount > 200)
+        if (signbit(prevOutput) != signbit(I_P) && msCount > msToStabilize)
           signChangeCount++;
 
         // Update output value to I_P
