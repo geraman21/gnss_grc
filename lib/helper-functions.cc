@@ -519,7 +519,6 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
   float codeFreqBasis = 1023000;
 
   auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
-  std::cout << "Peak Metric   " << channelStrength << std::endl;
   if (channelStrength > 2.0) {
     std::vector<int> caCode = generateCa(PRN);
     std::vector<std::complex<float>> xCarrier;

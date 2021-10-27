@@ -46,11 +46,14 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
     std::cout << "Acquisition Cold Start Initiated" << std::endl;
     std::cout << "(  ";
     for (int PRN = 1; PRN <= 32; PRN++) {
+      if (std::find(channels.begin(), channels.end(), PRN) != channels.end()) {
+        continue;
+      }
       AcqResults result =
           checkIfChannelPresent(PRN, ts, IF, complexCaTable.at(PRN - 1), longSignal);
       std::cout.precision(1);
-      result.PRN ? std::cout << std::fixed << PRN << " (" << result.peakMetric << ")   "
-                 : std::cout << result.peakMetric << std::fixed << "    ";
+      result.PRN ? std::cout << std::fixed << PRN << " [ " << result.peakMetric << " ]   "
+                 : std::cout << "   .   ";
       if (result.PRN)
         acqResults.push_back(result);
     }
@@ -58,38 +61,29 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
     bool newChannelAcquired = false;
     if (acqResults.size() > 0) {
       std::sort(acqResults.begin(), acqResults.end(),
-                [](AcqResults a, AcqResults b) { return (a.peakMetric > b.peakMetric); });
+                [](AcqResults a, AcqResults b) { return (a.peakMetric < b.peakMetric); });
       // Send active channels to respective tracking blocks if no specific PRN provided
       for (int i = 0; i < channelNum; i++) {
-        if (channels.at(i) == receivedPRN)
-          for (int k = 0; k < acqResults.size(); k++) {
-            if (acqResults.at(k).PRN != 0) {
-              bool duplicate = std::find(channels.begin(), channels.end(), acqResults.at(k).PRN) !=
-                               channels.end();
-              if (duplicate) {
-                acqResults.at(k).PRN = 0;
-                continue;
-              } else {
-                acqResults.at(i).channelNumber = i;
-                channels.at(i) = acqResults.at(k).PRN;
-                // channels.at(i) = 17;
-                // acqResults.at(k).PRN = 17;
-                auto size = sizeof(AcqResults);
-                auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults.at(k)), size);
-                message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
-                newChannelAcquired = true;
-                std::cout << "Assigned channel   " << i << "(" << receivedPRN << ")"
-                          << "    new PRN value   " << acqResults.at(k).PRN << std::endl;
-                acqResults.at(k).PRN = 0;
-                break;
-              }
-            }
-          }
+        if (channels.at(i) == receivedPRN) {
+          if (acqResults.size() == 0)
+            break;
+
+          acqResults.back().channelNumber = i;
+          channels.at(i) = acqResults.back().PRN;
+          auto size = sizeof(AcqResults);
+          auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults.back()), size);
+          message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
+          newChannelAcquired = true;
+          std::cout << "Assigned channel   " << i << "(" << receivedPRN << ")"
+                    << "    new PRN value   " << acqResults.back().PRN << std::endl;
+          acqResults.pop_back();
+        }
       }
     }
     if (!newChannelAcquired) {
       auto size = sizeof(AcqResults);
       AcqResults emptyResult = AcqResults();
+      emptyResult.PRN = receivedPRN;
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&emptyResult), size);
       message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
       message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_restart"), pmt));

@@ -57,7 +57,7 @@ nav_decoding_impl::nav_decoding_impl(int channelNum, float _sampleFreq)
 nav_decoding_impl::~nav_decoding_impl() {}
 
 void nav_decoding_impl::restartDataExtraction() {
-  std::cout << "data extraction restarted" << std::endl;
+  std::cout << "data extraction started" << std::endl;
   iterator = 0;
   result = 0;
   gatherNavBits = true;
@@ -93,8 +93,6 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
           std::cerr << e.what() << '\n';
         }
 
-        // Set PRN from the tag data
-        // if (!std::isnan(receivedPRN) && PRN != receivedPRN) {
         if (receivedPRN != 0 && PRN != receivedPRN) {
           restartDataExtraction();
           PRN = receivedPRN;
@@ -103,9 +101,10 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
       if (gatherNavBits) {
         if (iterator < subframeStart + 1500 * 20 - 1) {
-          if (in[i] == 0)
+          if (in[i] == 0) {
             iterator = 0;
-          else
+            result = 0;
+          } else
             in[i] > 0 ? buffer[iterator] = 1 : buffer[iterator] = -1;
         }
 

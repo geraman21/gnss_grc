@@ -33,9 +33,9 @@ nav_solution_impl::nav_solution_impl()
     Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
     if (data_object.channelNumber != -1) {
       ephemerides.at(data_object.channelNumber) = data_object;
-      std::cout << "============================" << std::endl;
-      data_object.printEphemeris();
-      std::cout << "============================" << std::endl;
+      // std::cout << "============================" << std::endl;
+      // data_object.printEphemeris();
+      // std::cout << "============================" << std::endl;
     }
   });
 }
@@ -50,10 +50,6 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
   const input_type *in0 = reinterpret_cast<const input_type *>(input_items[0]);
   output_type *out = reinterpret_cast<output_type *>(output_items[0]);
 
-  const uint64_t nread = this->nitems_read(0); // number of items read on port 0
-  const size_t ninput_items = noutput_items;   // assumption for sync block, this can change
-  // read all tags associated with port 0 for items in this work function
-
   // std::cout << "Tags size:  " << tags.size() << std::endl;
   for (int i = 0; i < noutput_items; i++) {
 
@@ -64,6 +60,10 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
     std::vector<Ephemeris> active_ephemerides;
     std::vector<double> towOffsets;
     for (int p = 0; p < input_items.size(); p++) {
+      const uint64_t nread = this->nitems_read(p); // number of items read on port 0
+      const size_t ninput_items = noutput_items;   // assumption for sync block, this can change
+      // read all tags associated with port 0 for items in this work function
+
       const double *in = reinterpret_cast<const input_type *>(input_items[p]);
       tags.clear();
       this->get_tags_in_range(tags, p, nread, nread + ninput_items, pmt::mp("towoffset"));
@@ -101,19 +101,24 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
     //   navTest++;
     // }
     if (startNavigation) {
+      for (auto i : active_input_items) {
+        std::cout << i << "       ";
+      }
       pseudoRanges = getPseudoRanges(active_input_items, startOffset, c);
       std::vector<SatPosition> satPositions(active_input_items.size());
       for (int i = 0; i < active_input_items.size(); i++) {
         double transmitTime = active_ephemerides.at(i).TOW * 1.0 + towOffsets.at(i) * 1.0;
         satPositions.at(i) = SatPosition(transmitTime, active_ephemerides.at(i));
+        // std::cout << pseudoRanges.at(i) << "     ";
         pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
       }
       std::cout << std::endl;
 
       auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
       auto [latitude, longitude, height] = cart2geo(xyzdt(0), xyzdt(1), xyzdt(2), 5);
-      cout << "xyzdt(0): " << xyzdt(0) << "  xyzdt(1): " << xyzdt(1) << "  xyzdt(2): " << xyzdt(2)
-           << endl;
+      // cout << "xyzdt(0): " << xyzdt(0) << "  xyzdt(1): " << xyzdt(1) << "  xyzdt(2): " <<
+      // xyzdt(2)
+      //      << endl;
       // cout << "latitude: " << latitude << "  longitude: " << longitude << "  height: " <<
       // height
       // << endl; std::cout << "xyzdt: " << xyzdt << std::endl

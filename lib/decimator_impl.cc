@@ -60,7 +60,8 @@ int decimator_impl::work(int noutput_items, gr_vector_const_void_star &input_ite
       tag.value = tags.at(j).value;
       this->add_item_tag(0, tag);
     }
-    out[j] = in[valueIndex];
+    out[j] = valueIndex >= 0 ? in[valueIndex] : 0;
+    valueIndex = -1;
   }
 
   // Tell runtime system how many output items we produced.
