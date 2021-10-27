@@ -36,6 +36,7 @@ private:
   int msToStabilize = 500;
   int msCount{};
   int signChangeCount{};
+  bool trackingLocked = false;
   bool sendTag = false;
   // for sin cos calculations
   float a, b, sina, cosa, resSin, resCos;

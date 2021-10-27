@@ -86,10 +86,6 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   restartAcquisition = false;
   unsigned long totalSamplesFromStart = totalSamples - acqResult.codePhase;
   receivedCodePhase = blksize - (totalSamplesFromStart % blksize);
-  // std::cout << "Received PRN:   " << acqResult.PRN << std::endl;
-  // std::cout << "Received Peak Metric:   " << acqResult.peakMetric << std::endl;
-  // std::cout << "Received code phase:   " << receivedCodePhase << std::endl;
-  // std::cout << "Received Carr freq:   " << acqResult.carrFreq << std::endl;
   codePhase = receivedCodePhase;
   carrFreq = acqResult.carrFreq;
   carrFreqBasis = acqResult.carrFreq;
@@ -134,9 +130,12 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
   // Restart the channel if output data bitrate is above 50hz
   // Allow 200ms for channel to stabilize
   if (msCount >= msForQualityCheck + msToStabilize) {
-    if (signChangeCount > msForQualityCheck / 20 || signChangeCount < 10) {
+    if (signChangeCount > msForQualityCheck / 20 + 5 || signChangeCount < 10) {
       std::cout << "PRN:  " << PRN << "  Quality Check failed, restarting..." << std::endl;
       startReaquisition();
+      trackingLocked = false;
+    } else {
+      trackingLocked = true;
     }
     // std::cout << "Quality Results:   " << signChangeCount << "     out of    "
     //           << msForQualityCheck / 20 << std::endl;
@@ -224,7 +223,6 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         // quality check whether we receive a real 50hz signal, allow 200ms for channel to stabilize
         if (signbit(prevOutput) != signbit(I_P) && msCount > msToStabilize)
           signChangeCount++;
-
         // Update output value to I_P
         output = I_P;
         prevOutput = I_P;
@@ -234,13 +232,13 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
         // Update remaining Code Phase once per ms
         remCodePhase = tEndPrompt - 1023.0;
-
-        tag_t tag;
-        tag.offset = this->nitems_written(0) + i;
-        tag.key = pmt::mp(std::to_string(PRN));
-        tag.value = pmt::from_uint64(absSampleCount);
-        this->add_item_tag(0, tag);
-
+        if (trackingLocked) {
+          tag_t tag;
+          tag.offset = this->nitems_written(0) + i;
+          tag.key = pmt::mp(std::to_string(PRN));
+          tag.value = pmt::from_uint64(absSampleCount);
+          this->add_item_tag(0, tag);
+        }
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
         float carrError = atan(Q_P / I_P) / (2.0 * M_PI);
@@ -281,7 +279,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         iterator++;
       }
     }
-    out[i] = output ? output : 0;
+    out[i] = output && trackingLocked ? output : 0;
     output = 0;
   }
 

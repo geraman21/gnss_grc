@@ -69,7 +69,9 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
             break;
 
           acqResults.back().channelNumber = i;
-          channels.at(i) = acqResults.back().PRN;
+          // channels.at(i) = acqResults.back().PRN;
+          channels.at(i) = 17;
+          acqResults.back().PRN = 17;
           auto size = sizeof(AcqResults);
           auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults.back()), size);
           message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));

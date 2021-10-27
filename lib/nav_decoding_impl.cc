@@ -57,9 +57,9 @@ nav_decoding_impl::nav_decoding_impl(int channelNum, float _sampleFreq)
 nav_decoding_impl::~nav_decoding_impl() {}
 
 void nav_decoding_impl::restartDataExtraction() {
-  std::cout << "data extraction started" << std::endl;
   iterator = 0;
   result = 0;
+  absSampleCount = 0;
   gatherNavBits = true;
 }
 
@@ -75,12 +75,29 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
   this->get_tags_in_range(tags, 0, nread, nread + ninput_items);
 
   for (int j = 0; j < noutput_items; j++) {
+    if (gatherNavBits)
+      std::cout << "Iterator   " << iterator / 1000 << std::endl;
     towCounter += 500;
     if (absSampleCount != 0) {
       absSampleCount = pmt::to_uint64(tags.at(j * 500 + subStartIndex).value);
-      // std::cout << "   RemCodePhase   " << absSampleCount;
     }
+
     for (int i = j * 500; i < j * 500 + 500; i++) {
+
+      if (in[i] == 0 && gatherNavBits) {
+        absSampleCount = 0;
+        iterator = 0;
+        subframeStart = 0;
+      }
+
+      if (i != 0 && in[i - 1] != 0 && in[i] == 0 && gatherNavBits) {
+        std::cout << "data extraction restarted for PRN   " << PRN
+                  << "      iterator at:   " << (double)iterator / 1000 << std::endl;
+      }
+
+      if (i != 0 && in[i - 1] == 0 && in[i] != 0 && gatherNavBits) {
+        std::cout << "data extraction restarted for PRN   " << PRN << std::endl;
+      }
 
       // Check if Channel PRN has been changed
       if (tags.size() == ninput_items) {
@@ -93,27 +110,27 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
           std::cerr << e.what() << '\n';
         }
 
-        if (receivedPRN != 0 && PRN != receivedPRN) {
+        if (receivedPRN != 0 && PRN != receivedPRN && in[i] != 0) {
+          std::cout << "Data extraction restarted,   old PRN:   " << PRN
+                    << "    new PRN:   " << receivedPRN << std::endl;
           restartDataExtraction();
           PRN = receivedPRN;
         }
       }
 
-      if (gatherNavBits) {
+      if (gatherNavBits && in[i] != 0) {
         if (iterator < subframeStart + 1500 * 20 - 1) {
-          if (in[i] == 0) {
-            iterator = 0;
-            result = 0;
-          } else
-            in[i] > 0 ? buffer[iterator] = 1 : buffer[iterator] = -1;
-        }
 
-        // Find the start of a Sub-frame to generate correct nav-bits
-        if (iterator == samplesForPreamble - 1) {
-          std::deque<int> temp(buffer, buffer + samplesForPreamble);
-          subframeStart = findSubframeStart(temp);
-        }
+          in[i] > 0 ? buffer[iterator] = 1 : buffer[iterator] = -1;
 
+          // Find the start of a Sub-frame to generate correct nav-bits
+          if (iterator == samplesForPreamble - 1) {
+            std::deque<int> temp(buffer, buffer + samplesForPreamble);
+            subframeStart = findSubframeStart(temp);
+            std::cout << "Subframe start for PRN:    " << PRN
+                      << "   identified:   " << subframeStart << std::endl;
+          }
+        }
         if (iterator == (subframeStart + 1500 * 20 - 1)) {
           towCounter = 0;
           subStartIndex = i % 500;
@@ -139,31 +156,28 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
           auto pmt = pmt::make_blob(navBits.data(), size);
           message_port_pub(pmt::string_to_symbol("nav_bits"),
                            pmt::cons(pmt::from_long(channel), pmt));
+
+          std::cout << "Nav bits for PRN   " << PRN << "sent to nav_solution" << std::endl;
           gatherNavBits = false;
         }
+
+        iterator++;
       }
 
-      iterator++;
-    }
-
-    if (absSampleCount != 0) {
-      const size_t item_index = j; // which output item gets the tag?
-      const uint64_t offset = this->nitems_written(0) + item_index;
-      tag_t tag;
-      tag.offset = offset;
-      tag.key = pmt::mp("towoffset");
-      tag.value = pmt::from_double((towCounter * 1.0) / 1000);
-      this->add_item_tag(0, tag);
+      if (absSampleCount != 0) {
+        const size_t item_index = j; // which output item gets the tag?
+        const uint64_t offset = this->nitems_written(0) + item_index;
+        tag_t tag;
+        tag.offset = offset;
+        tag.key = pmt::mp("towoffset");
+        tag.value = pmt::from_double((towCounter * 1.0) / 1000);
+        this->add_item_tag(0, tag);
+      }
     }
 
     result = (double)absSampleCount / (sampleFreq / 1000.0);
-    // if (result > 0 && channel == 0) {
-    //   std::cout.precision(16);
-    //   std::cout << "   " << std::fixed << result;
-    // }
     out[j] = result ? result : 0;
   }
-
   return noutput_items;
 }
 

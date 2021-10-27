@@ -332,7 +332,7 @@ std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double star
   int minimum = floor(*std::min_element(pseudoRanges.begin(), pseudoRanges.end()));
   std::transform(pseudoRanges.begin(), pseudoRanges.end(), pseudoRanges.begin(),
                  [minimum, startOffset, c](double a) {
-                   return a == 0 ? 0 : ((a - (double)minimum + startOffset) * (double)c / 1000.0);
+                   return ((a - (double)minimum + startOffset) * (double)c / 1000.0);
                  });
 
   return pseudoRanges;

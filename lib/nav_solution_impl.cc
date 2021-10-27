@@ -33,9 +33,8 @@ nav_solution_impl::nav_solution_impl()
     Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
     if (data_object.channelNumber != -1) {
       ephemerides.at(data_object.channelNumber) = data_object;
-      // std::cout << "============================" << std::endl;
-      // data_object.printEphemeris();
-      // std::cout << "============================" << std::endl;
+      data_object.printEphemeris();
+      std::cout << "============================" << std::endl;
     }
   });
 }
@@ -101,17 +100,19 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
     //   navTest++;
     // }
     if (startNavigation) {
-      for (auto i : active_input_items) {
-        std::cout << i << "       ";
-      }
+      // for (auto i : active_input_items) {
+      //   std::cout << i << "       ";
+      // }
+      // std::cout << std::endl;
       pseudoRanges = getPseudoRanges(active_input_items, startOffset, c);
       std::vector<SatPosition> satPositions(active_input_items.size());
       for (int i = 0; i < active_input_items.size(); i++) {
         double transmitTime = active_ephemerides.at(i).TOW * 1.0 + towOffsets.at(i) * 1.0;
         satPositions.at(i) = SatPosition(transmitTime, active_ephemerides.at(i));
-        // std::cout << pseudoRanges.at(i) << "     ";
         pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
+        // std::cout << pseudoRanges.at(i) << "     ";
       }
+      // std::cout << std::endl << "---------------";
       std::cout << std::endl;
 
       auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
