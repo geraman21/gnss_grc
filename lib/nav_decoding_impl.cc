@@ -57,10 +57,10 @@ nav_decoding_impl::nav_decoding_impl(int channelNum, float _sampleFreq)
 nav_decoding_impl::~nav_decoding_impl() {}
 
 void nav_decoding_impl::restartDataExtraction() {
-  iterator = 0;
   result = 0;
   absSampleCount = 0;
-  gatherNavBits = true;
+  iterator = 0;
+  subframeStart = 0;
 }
 
 int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_items,
@@ -75,8 +75,6 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
   this->get_tags_in_range(tags, 0, nread, nread + ninput_items);
 
   for (int j = 0; j < noutput_items; j++) {
-    if (gatherNavBits)
-      std::cout << "Iterator   " << iterator / 1000 << std::endl;
     towCounter += 500;
     if (absSampleCount != 0) {
       absSampleCount = pmt::to_uint64(tags.at(j * 500 + subStartIndex).value);
@@ -115,6 +113,7 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
                     << "    new PRN:   " << receivedPRN << std::endl;
           restartDataExtraction();
           PRN = receivedPRN;
+          gatherNavBits = true;
         }
       }
 
@@ -127,8 +126,13 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
           if (iterator == samplesForPreamble - 1) {
             std::deque<int> temp(buffer, buffer + samplesForPreamble);
             subframeStart = findSubframeStart(temp);
-            std::cout << "Subframe start for PRN:    " << PRN
-                      << "   identified:   " << subframeStart << std::endl;
+            if (subframeStart == 0) {
+              std::cout << "Couldnt detect Subframe Star for PRN:    " << PRN
+                        << "   DataExtraction Restarted" << std::endl;
+              restartDataExtraction();
+            } else
+              std::cout << "Subframe start for PRN:    " << PRN
+                        << "   identified:   " << subframeStart << std::endl;
           }
         }
         if (iterator == (subframeStart + 1500 * 20 - 1)) {
@@ -163,16 +167,15 @@ int nav_decoding_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
         iterator++;
       }
-
-      if (absSampleCount != 0) {
-        const size_t item_index = j; // which output item gets the tag?
-        const uint64_t offset = this->nitems_written(0) + item_index;
-        tag_t tag;
-        tag.offset = offset;
-        tag.key = pmt::mp("towoffset");
-        tag.value = pmt::from_double((towCounter * 1.0) / 1000);
-        this->add_item_tag(0, tag);
-      }
+    }
+    if (absSampleCount != 0) {
+      const size_t item_index = j; // which output item gets the tag?
+      const uint64_t offset = this->nitems_written(0) + item_index;
+      tag_t tag;
+      tag.offset = offset;
+      tag.key = pmt::mp("towoffset");
+      tag.value = pmt::from_double((towCounter * 1.0) / 1000);
+      this->add_item_tag(0, tag);
     }
 
     result = (double)absSampleCount / (sampleFreq / 1000.0);

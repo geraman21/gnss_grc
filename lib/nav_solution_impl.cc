@@ -117,9 +117,8 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
       auto [xyzdt, el, az, DOP] = leastSquarePos(satPositions, pseudoRanges, c);
       auto [latitude, longitude, height] = cart2geo(xyzdt(0), xyzdt(1), xyzdt(2), 5);
-      // cout << "xyzdt(0): " << xyzdt(0) << "  xyzdt(1): " << xyzdt(1) << "  xyzdt(2): " <<
-      // xyzdt(2)
-      //      << endl;
+      cout << "xyzdt(0): " << xyzdt(0) << "  xyzdt(1): " << xyzdt(1) << "  xyzdt(2): " << xyzdt(2)
+           << endl;
       // cout << "latitude: " << latitude << "  longitude: " << longitude << "  height: " <<
       // height
       // << endl; std::cout << "xyzdt: " << xyzdt << std::endl
