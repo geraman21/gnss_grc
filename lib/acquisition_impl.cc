@@ -69,8 +69,8 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
             break;
 
           acqResults.back().channelNumber = i;
-          if (acqResults.back().PRN == 23) {
-            acqResults.back().PRN = 20;
+          if (acqResults.back().PRN == 1) {
+            acqResults.back().PRN = 17;
           }
           channels.at(i) = acqResults.back().PRN;
 

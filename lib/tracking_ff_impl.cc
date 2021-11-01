@@ -65,6 +65,7 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
     //     haltTracking();
     // }
   });
+  Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
   longSignal.reserve(11000 * samplesPerCode);
   paddedCaTable.reserve(33);
   makePaddedCaTable(paddedCaTable);
@@ -80,9 +81,6 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
  */
 tracking_ff_impl::~tracking_ff_impl() {}
 void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
-  std::cout << std::endl
-            << "Freq:  " << acqResult.carrFreq << "    Phase:  " << acqResult.codePhase
-            << std::endl;
   codeFreq = codeFreqBasis;
   codePhaseStep = codeFreq * samplePeriod;
   blksize = ceil(codeLength / codePhaseStep);
@@ -113,7 +111,7 @@ void tracking_ff_impl::reset() {
   carrFreq = 0.0;
   codeFreq = codeFreqBasis;
   iterator = 0;
-  Q_E = I_E = Q_P = I_P = Q_L = I_L = 0.0;
+  Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
 }
 
 void tracking_ff_impl::haltTracking() {
@@ -258,10 +256,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         auto dot = std::abs(currentOutput.real() * prevOutput.real() +
                             prevOutput.imag() * currentOutput.imag());
 
-        if (dot < 0)
-          dot = -dot;
-
-        float carrError = atan2(cross, dot) / (2.0 * M_PI);
+        float carrError = atan(currentOutput.imag() / currentOutput.real()) / (2.0 * M_PI);
 
         // Implement carrier loop filter and generate NCO command
 
@@ -292,7 +287,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         // test++;
 
         // Reset early late and prompt correlation results and set iterator to 0
-        Q_E = I_E = Q_P = I_P = Q_L = I_L = 0;
+        Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
         prevOutput = currentOutput;
         iterator = 0;
         msCount++;

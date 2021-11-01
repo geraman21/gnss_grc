@@ -58,6 +58,8 @@ channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, in
       std::cout << "Starter for  PRN:   " << receivedPRN
                 << "    attempts left:  " << attemptsLeft.at(PRN)
                 << "   Identified PeakMetric:   " << acqResult.peakMetric << std::endl;
+      std::cout << "Freq:  " << acqResult.carrFreq << "    Phase:  " << acqResult.codePhase
+                << std::endl;
     } else {
       std::cout << "Channel Starter requested reacquisition for PRN:  " << PRN << std::endl;
       AcqResults acqResult = AcqResults(PRN, 0, 0, 0);

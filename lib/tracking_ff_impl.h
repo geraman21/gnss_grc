@@ -43,7 +43,7 @@ private:
   bool sendTag = false;
   // for sin cos calculations
   float a, b, sina, cosa, resSin, resCos;
-  std::complex<float> I_E{0}, Q_E{0}, Q_P{0}, I_P{0}, I_L{0}, Q_L{0};
+  std::complex<float> I_E, Q_E, Q_P, I_P, I_L, Q_L;
   int iterator = 0;
   int blksize{};
   int codePhase{};
