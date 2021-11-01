@@ -20,7 +20,7 @@
 namespace gr {
 namespace gnss {
 
-using input_type = float;
+using input_type = gr_complex;
 using output_type = float;
 tracking_ff::sptr tracking_ff::make(int _channelNum, float _sampleFreq, float pll_nbw, float pll_dr,
                                     float pll_lg, float dll_nbw, float dll_dr, float dll_lg) {
@@ -80,6 +80,9 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
  */
 tracking_ff_impl::~tracking_ff_impl() {}
 void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
+  std::cout << std::endl
+            << "Freq:  " << acqResult.carrFreq << "    Phase:  " << acqResult.codePhase
+            << std::endl;
   codeFreq = codeFreqBasis;
   codePhaseStep = codeFreq * samplePeriod;
   blksize = ceil(codeLength / codePhaseStep);
@@ -187,7 +190,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       if (isnan(iteratorStep))
         continue;
       // Generate Early CA Code.
-      int earlyCode{}, lateCode{}, promptCode{};
+      float earlyCode{}, lateCode{}, promptCode{};
 
       earlyCode = paddedCaTable.at(PRN).at(std::ceil(tStartEarly + iteratorStep));
 
@@ -213,8 +216,8 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       resCos = newResCos;
       resSin = newResSin;
 
-      float qSignal = in[i] * resCos;
-      float iSignal = in[i] * resSin;
+      gr_complex qSignal = in[i] * resCos;
+      gr_complex iSignal = in[i] * resSin;
 
       Q_E += earlyCode * qSignal;
       I_E += earlyCode * iSignal;
@@ -226,15 +229,17 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       // When 1 ms of data is processed update code and carr remaining phase values
       // and reset iterator else incr iterator
       if (iterator == blksize - 1) {
+        std::complex<float> currentOutput = I_P + Q_P;
         // quality check whether we receive a real 50hz signal, allow 200ms for channel to stabilize
-        if (signbit(prevOutput) != signbit(I_P) && msCount > msToStabilize) {
+        if (signbit(prevOutput.real()) != signbit(currentOutput.real()) &&
+            msCount > msToStabilize) {
           signChangeCount++;
         }
-        I_P > 0 ? positiveCorrCount++ : negativeCorrCount++;
         // Update output value to I_P
-        prevOutput = I_P;
 
-        output = I_P;
+        currentOutput.real() > 0 ? positiveCorrCount++ : negativeCorrCount++;
+
+        output = currentOutput.real();
         remCarrPhase =
             fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase), (2 * M_PI));
 
@@ -248,7 +253,15 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
-        float carrError = atan(Q_P / I_P) / (2.0 * M_PI);
+        auto cross =
+            currentOutput.real() * prevOutput.imag() - prevOutput.real() * currentOutput.imag();
+        auto dot = std::abs(currentOutput.real() * prevOutput.real() +
+                            prevOutput.imag() * currentOutput.imag());
+
+        if (dot < 0)
+          dot = -dot;
+
+        float carrError = atan2(cross, dot) / (2.0 * M_PI);
 
         // Implement carrier loop filter and generate NCO command
 
@@ -258,8 +271,8 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         //  Modify carrier freq based on NCO command
         carrFreq = carrFreqBasis + carrNco;
 
-        float sqrtEarly = sqrt(I_E * I_E + Q_E * Q_E);
-        float sqrtLate = sqrt(I_L * I_L + Q_L * Q_L);
+        float sqrtEarly = std::abs(I_E + Q_E);
+        float sqrtLate = std::abs(I_L + Q_L);
         float codeError = (sqrtEarly - sqrtLate) / (sqrtEarly + sqrtLate);
 
         //  Implement code loop filter and generate NCO command
@@ -280,6 +293,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
         // Reset early late and prompt correlation results and set iterator to 0
         Q_E = I_E = Q_P = I_P = Q_L = I_L = 0;
+        prevOutput = currentOutput;
         iterator = 0;
         msCount++;
       } else {

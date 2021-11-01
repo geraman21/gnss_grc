@@ -40,7 +40,7 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
     auto msg_key = pmt::car(msg);
     auto msg_val = pmt::cdr(msg);
     int receivedPRN = pmt::to_long(msg_key);
-    const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));
+    const gr_complex *data = reinterpret_cast<const gr_complex *>(pmt::blob_data(msg_val));
     longSignal.assign(data, data + longSignal.capacity());
     acqResults.clear();
     std::cout << "Acquisition Cold Start Initiated" << std::endl;

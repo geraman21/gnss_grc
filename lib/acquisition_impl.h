@@ -30,7 +30,7 @@ private:
   float samplesPerCode;
   int numberOfFrqBins = 29;
   std::vector<std::vector<std::complex<float>>> caCodesTable;
-  std::vector<float> longSignal;
+  std::vector<gr_complex> longSignal;
   std::vector<AcqResults> acqResults;
   std::vector<int> channels;
 

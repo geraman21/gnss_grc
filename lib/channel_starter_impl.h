@@ -27,7 +27,7 @@ private:
   float codeLength = 1023;
   float samplesPerCode;
   std::vector<std::complex<float>> complexCaVector;
-  std::vector<float> longSignal;
+  std::vector<gr_complex> longSignal;
 
 public:
   channel_starter_impl(float s_sampleFreq, float im_freq, int attempts);

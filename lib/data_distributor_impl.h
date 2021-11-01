@@ -22,7 +22,7 @@ private:
   bool acqInProgress = false;
   unsigned int iterator = 0;
   unsigned int samplesToSend{};
-  std::vector<float> lognSignal;
+  std::vector<gr_complex> lognSignal;
   unsigned long int counter{};
 
 public:

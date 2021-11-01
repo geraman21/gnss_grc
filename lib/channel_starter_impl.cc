@@ -46,7 +46,7 @@ channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, in
         complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
     }
     if (attemptsLeft.at(PRN) > 0 && receivedPRN != 0) {
-      const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));
+      const gr_complex *data = reinterpret_cast<const gr_complex *>(pmt::blob_data(msg_val));
       longSignal.assign(data, data + longSignal.capacity());
       AcqResults acqResult = performAcquisition(PRN, ts, IF, complexCaVector, longSignal);
       acqResult.PRN = PRN;

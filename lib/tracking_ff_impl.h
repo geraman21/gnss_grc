@@ -11,6 +11,7 @@
 #include "channel.h"
 #include "generate_l1_ca.h"
 #include "helper-functions.h"
+#include <complex>
 #include <deque>
 #include <gnss/tracking_ff.h>
 #include <vector>
@@ -42,7 +43,7 @@ private:
   bool sendTag = false;
   // for sin cos calculations
   float a, b, sina, cosa, resSin, resCos;
-  float I_E{0}, Q_E{0}, Q_P{0}, I_P{0}, I_L{0}, Q_L{0};
+  std::complex<float> I_E{0}, Q_E{0}, Q_P{0}, I_P{0}, I_L{0}, Q_L{0};
   int iterator = 0;
   int blksize{};
   int codePhase{};
@@ -51,7 +52,7 @@ private:
   float carrFreqBasis;
   std::vector<std::vector<int>> paddedCaTable;
   std::vector<int> caCode;
-  std::vector<float> longSignal;
+  std::vector<std::complex<float>> longSignal;
   int samplesPerCode{};
   float codeFreqBasis = 1023000;
   float codeFreq = 1023000;
@@ -62,7 +63,7 @@ private:
   float codePhaseStep = 0;
   float dllCorrelatorSpacing = 0.5;
   float output = 0;
-  float prevOutput{};
+  std::complex<float> prevOutput{};
   int codeLength = 1023;
   float remCarrPhase = 0;
   float remCodePhase = 0;

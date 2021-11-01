@@ -11,8 +11,8 @@
 
 namespace gr {
 namespace gnss {
-using input_type = float;
-using output_type = float;
+using input_type = gr_complex;
+using output_type = gr_complex;
 data_distributor::sptr data_distributor::make(float numSamples) {
   return gnuradio::make_block_sptr<data_distributor_impl>(numSamples);
 }
@@ -63,7 +63,7 @@ int data_distributor_impl::work(int noutput_items, gr_vector_const_void_star &in
       lognSignal.push_back(in[i]);
       iterator++;
     } else if (distribute && lognSignal.size() >= samplesToSend) {
-      auto size = sizeof(float) * lognSignal.size();
+      auto size = sizeof(gr_complex) * lognSignal.size();
       auto pmt = pmt::make_blob(lognSignal.data(), size);
       message_port_pub(pmt::string_to_symbol("data_vector"), pmt::cons(pmt::from_long(PRN), pmt));
       iterator = 0;
