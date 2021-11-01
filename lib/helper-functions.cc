@@ -210,8 +210,43 @@ int parityCheck(std::vector<int> &bits, int index) {
     return 0;
 }
 
-int findSubframeStart(std::deque<int> &buffer) {
+unsigned int bin2dec(std::vector<int> vec) {
+  unsigned int decimal = 0;
+
+  for (int i = 0; i < vec.size(); i++) {
+    int bit = vec.at(i) > 0 ? 1 : 0;
+    decimal = decimal * 2 + bit;
+  }
+  return decimal;
+}
+
+int twosComp2dec(std::vector<int> vec) {
+  if (vec.front() == 1) {
+    std::for_each(vec.begin(), vec.end(), [](int &a) { a == 0 ? a = 1 : a = 0; });
+    return -(bin2dec(vec) + 1);
+  } else
+    return bin2dec(vec);
+}
+
+std::vector<int> vecSelector(std::vector<int> &source, int start, int end) {
+  if (start < 0 || start >= end || end > source.size())
+    return std::vector<int>(1, -1);
+  return std::vector<int>(source.begin() + start - 1, source.begin() + end);
+}
+
+std::vector<int> vecSelector(std::vector<int> &source, int start, int end, int start1, int end1) {
+  if (start < 0 || start >= end || end > source.size() || start1 < 0 || start1 >= end1 ||
+      end1 > source.size())
+    return std::vector<int>(1, -1);
+
+  std::vector<int> temp(source.begin() + start - 1, source.begin() + end);
+  temp.insert(temp.end(), source.begin() + start1 - 1, source.begin() + end1);
+  return temp;
+}
+
+std::tuple<int, int> findSubframeStart(std::deque<int> &buffer) {
   int subframeStart = 0;
+  int TOW = 0;
   auto corrResult = std::vector<int>(buffer.size() + 159);
   // Invert and spread preamble over 20 to find correlation using convolve
   // function: { 1, 1, 0, 1, 0, 0, 0, 1 }
@@ -283,46 +318,19 @@ int findSubframeStart(std::deque<int> &buffer) {
 
         if (parity1 != 0 && parity2 != 0) {
           subframeStart = index;
+          std::vector<int> temp = vecSelector(bits, 33, 49);
+          if (bits.at(1) == 1) {
+            std::transform(temp.begin(), temp.end(), temp.begin(),
+                           [](int a) { return a > 0 ? 0 : 1; });
+          }
+          TOW = bin2dec(temp) * 6;
           goto endloop;
         }
       }
     }
   }
 endloop:
-  return subframeStart;
-}
-
-unsigned int bin2dec(std::vector<int> vec) {
-  unsigned int decimal = 0;
-
-  for (int i = 0; i < vec.size(); i++) {
-    decimal = decimal * 2 + vec.at(i);
-  }
-  return decimal;
-}
-
-int twosComp2dec(std::vector<int> vec) {
-  if (vec.front() == 1) {
-    std::for_each(vec.begin(), vec.end(), [](int &a) { a == 0 ? a = 1 : a = 0; });
-    return -(bin2dec(vec) + 1);
-  } else
-    return bin2dec(vec);
-}
-
-std::vector<int> vecSelector(std::vector<int> &source, int start, int end) {
-  if (start < 0 || start >= end || end > source.size())
-    return std::vector<int>(1, -1);
-  return std::vector<int>(source.begin() + start - 1, source.begin() + end);
-}
-
-std::vector<int> vecSelector(std::vector<int> &source, int start, int end, int start1, int end1) {
-  if (start < 0 || start >= end || end > source.size() || start1 < 0 || start1 >= end1 ||
-      end1 > source.size())
-    return std::vector<int>(1, -1);
-
-  std::vector<int> temp(source.begin() + start - 1, source.begin() + end);
-  temp.insert(temp.end(), source.begin() + start1 - 1, source.begin() + end1);
-  return temp;
+  return {subframeStart, TOW};
 }
 
 std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double startOffset,

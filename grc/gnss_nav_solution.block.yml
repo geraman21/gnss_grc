@@ -4,18 +4,22 @@ category: "[gnss]"
 
 templates:
   imports: import gnss
-  make: gnss.nav_solution()
+  make: gnss.nav_solution(${_sampleFreq}, ${_updateRate})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
 #     * id (makes the value accessible as keyname, e.g. in the make entry)
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
-# parameters:
-# - id: parametername_replace_me
-#   label: FIX ME:
-#   dtype: string
-#   value: You need to fill in your grc/gnss_nav_solution.block.yaml
+parameters:
+  - id: _sampleFreq
+    label: Sampling Freq.
+    dtype: float
+    default: samp_rate
+  - id: _updateRate
+    label: Update Rate
+    dtype: int
+    default: 2
 #- id: ...
 #  label: ...
 #  dtype: ...

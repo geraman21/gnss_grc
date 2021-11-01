@@ -36,6 +36,8 @@ private:
   int msToStabilize = 500;
   int msCount{};
   int signChangeCount{};
+  int positiveCorrCount;
+  int negativeCorrCount;
   bool trackingLocked = false;
   bool sendTag = false;
   // for sin cos calculations

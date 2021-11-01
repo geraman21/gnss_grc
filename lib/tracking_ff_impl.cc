@@ -130,8 +130,12 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
   // Restart the channel if output data bitrate is above 50hz
   // Allow 200ms for channel to stabilize
   if (msCount >= msForQualityCheck + msToStabilize) {
-    if (signChangeCount > msForQualityCheck / 20 + 5 || signChangeCount < 10) {
-      std::cout << "PRN:  " << PRN << "  Quality Check failed, restarting..." << std::endl;
+    double ratio = positiveCorrCount > negativeCorrCount
+                       ? positiveCorrCount * 1.0 / negativeCorrCount
+                       : negativeCorrCount * 1.0 / positiveCorrCount;
+    if (signChangeCount > msForQualityCheck / 20 + 5 || signChangeCount < 10 || ratio > 3) {
+      std::cout << "PRN:  " << PRN << "  Quality Check failed:   " << signChangeCount << "    "
+                << ratio << std::endl;
       startReaquisition();
       trackingLocked = false;
     } else {
@@ -141,6 +145,8 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
     //           << msForQualityCheck / 20 << std::endl;
     msCount = 0;
     signChangeCount = 0;
+    positiveCorrCount = 0;
+    negativeCorrCount = 0;
   }
 
   // Declare Early Late and Prompt code variables and their starting points
@@ -221,24 +227,25 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       // and reset iterator else incr iterator
       if (iterator == blksize - 1) {
         // quality check whether we receive a real 50hz signal, allow 200ms for channel to stabilize
-        if (signbit(prevOutput) != signbit(I_P) && msCount > msToStabilize)
+        if (signbit(prevOutput) != signbit(I_P) && msCount > msToStabilize) {
           signChangeCount++;
+        }
+        I_P > 0 ? positiveCorrCount++ : negativeCorrCount++;
         // Update output value to I_P
-        output = I_P;
         prevOutput = I_P;
 
+        output = I_P;
         remCarrPhase =
             fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase), (2 * M_PI));
 
         // Update remaining Code Phase once per ms
         remCodePhase = tEndPrompt - 1023.0;
-        if (trackingLocked) {
-          tag_t tag;
-          tag.offset = this->nitems_written(0) + i;
-          tag.key = pmt::mp(std::to_string(PRN));
-          tag.value = pmt::from_uint64(absSampleCount);
-          this->add_item_tag(0, tag);
-        }
+
+        tag_t tag;
+        tag.offset = this->nitems_written(0) + i;
+        tag.key = pmt::mp(std::to_string(PRN));
+        this->add_item_tag(0, tag);
+
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
         float carrError = atan(Q_P / I_P) / (2.0 * M_PI);
