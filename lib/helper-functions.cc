@@ -6,6 +6,7 @@
 #include <cmath>
 #include <complex>
 #include <deque>
+#include <fstream>
 #include <gnuradio/fft/fft.h>
 #include <iostream>
 #include <numeric>
@@ -542,6 +543,7 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
     }
 
     int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
+    std::cout << fftNumPts << std::endl;
     gr::fft::fft_complex_fwd fft_num_pts(fftNumPts, 1);
 
     std::complex<float> *ptr = fft_num_pts.get_inbuf();
@@ -551,7 +553,10 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
     memcpy(fftxc.data(), fft_num_pts.get_outbuf(), sizeof(gr_complex) * fftNumPts);
     std::vector<float> fftxcAbs;
     fftxcAbs.reserve(fftxc.size());
+    // std::ofstream outputFile("fftxcAbs.txt");
     for (auto val : fftxc) {
+      // std::string separator = val.imag() > 0 ? "+" : "";
+      // outputFile << std::abs(val) << "\n";
       fftxcAbs.push_back(std::abs(val));
     }
 
