@@ -22,27 +22,22 @@ namespace gnss {
 
 using input_type = gr_complex;
 using output_type = float;
-tracking_ff::sptr tracking_ff::make(int _channelNum, float _sampleFreq, float pll_nbw, float pll_dr,
-                                    float pll_lg, float dll_nbw, float dll_dr, float dll_lg) {
-  return gnuradio::make_block_sptr<tracking_ff_impl>(_channelNum, _sampleFreq, pll_nbw, pll_dr,
-                                                     pll_lg, dll_nbw, dll_dr, dll_lg);
+tracking_ff::sptr tracking_ff::make(int _channelNum, float _sampleFreq, float pll_nbw,
+                                    float dll_nbw) {
+  return gnuradio::make_block_sptr<tracking_ff_impl>(_channelNum, _sampleFreq, pll_nbw, dll_nbw);
 }
 
 /*
  * The private constructor
  */
 
-tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll_nbw, float pll_dr,
-                                   float pll_lg, float dll_nbw, float dll_dr, float dll_lg)
+tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll_nbw, float dll_nbw)
     : gr::sync_block(
           "tracking_ff",
           gr::io_signature::make(1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
       channelNum{_channelNum}, samplePeriod{1 / _sampleFreq}, sampleFreq{_sampleFreq},
-      pllNoiseBandwidth{pll_nbw}, pllDampingRatio{pll_dr},
-      loopGainCarr(pll_lg), dllNoiseBandwidth{dll_nbw}, dllDampingRatio{dll_dr}, loopGainCode{
-                                                                                     dll_lg} {
-  // channel = new Channel(21, 9547426.34201050, 13404, 'T');
+      pllNoiseBandwidth{pll_nbw}, dllNoiseBandwidth{dll_nbw} {
   message_port_register_in(pmt::string_to_symbol("acquisition"));
   message_port_register_out(pmt::string_to_symbol("data_vector"));
   set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg) {

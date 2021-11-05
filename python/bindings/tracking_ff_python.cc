@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(1)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(tracking_ff.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(a97eb98258edcfd18552e0ca3b3d3d48)                     */
+/* BINDTOOL_HEADER_FILE_HASH(5c062baf62ff53e872692fc7cacbee3f)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -33,10 +33,6 @@ void bind_tracking_ff(py::module &m) {
 
   py::class_<tracking_ff, gr::sync_block, gr::block, gr::basic_block, std::shared_ptr<tracking_ff>>(
       m, "tracking_ff", D(tracking_ff))
-
       .def(py::init(&tracking_ff::make), py::arg("_channelNum"), py::arg("_sampleFreq"),
-           py::arg("pll_nbw"), py::arg("pll_dr"), py::arg("pll_lg"), py::arg("dll_nbw"),
-           py::arg("dll_dr"), py::arg("dll_lg"), D(tracking_ff, make))
-
-      ;
+           py::arg("pll_nbw"), py::arg("dll_nbw"), D(tracking_ff, make));
 }

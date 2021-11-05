@@ -538,8 +538,9 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
     for (int i = 0; i < samplesPerCode * 10; i++) {
       int index = floor(ts * i * codeFreqBasis);
       int caCodeIndex = index % 1023;
-      xCarrier.push_back((longSignal.at(i + codePhase) - longSignalMean) *
-                         std::complex<float>(caCode.at(caCodeIndex), 0.0));
+      xCarrier.push_back(std::complex<float>(
+          (longSignal.at(i + codePhase).real() - longSignalMean.real()) * caCode.at(caCodeIndex),
+          0));
       // xCarrier.push_back((longSignal.at(i + codePhase)) *
       //                    std::complex<float>(caCode.at(caCodeIndex), 0.0));
     }
@@ -556,7 +557,6 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
     fftxcAbs.reserve(fftxc.size());
     std::ofstream outputFile("fftxcAbs.txt");
     for (auto val : fftxc) {
-      // std::string separator = val.imag() > 0 ? "+" : "";
       outputFile << std::abs(val) << "\n";
       fftxcAbs.push_back(std::abs(val));
     }

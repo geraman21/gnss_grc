@@ -31,8 +31,7 @@ public:
    * class. gnss::tracking_ff::make is the public interface for
    * creating new instances.
    */
-  static sptr make(int _channelNum, float _sampleFreq, float pll_nbw, float pll_dr, float pll_lg,
-                   float dll_nbw, float dll_dr, float dll_lg);
+  static sptr make(int _channelNum, float _sampleFreq, float pll_nbw, float dll_nbw);
 };
 
 } // namespace gnss
