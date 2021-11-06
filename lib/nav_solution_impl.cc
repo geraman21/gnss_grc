@@ -123,8 +123,9 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
         receivedTime.at(p) =
             (double)pmt::to_uint64(tags.at(p).at(j * decimation + liveSubframeStart.at(p)).value) /
             ((double)sampleFreq / 1000.0);
-        std::cout << pmt::to_uint64(tags.at(p).at(j * decimation + liveSubframeStart.at(p)).value)
-                  << "    ";
+        // std::cout << pmt::to_uint64(tags.at(p).at(j * decimation +
+        // liveSubframeStart.at(p)).value)
+        //           << "    ";
       }
       // if (startNavigation) {
       //   std::cout << pmt::to_uint64(tags.at(p).at(j * decimation +

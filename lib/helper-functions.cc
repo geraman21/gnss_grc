@@ -6,7 +6,7 @@
 #include <cmath>
 #include <complex>
 #include <deque>
-#include <fstream>
+// #include <fstream>
 #include <gnuradio/fft/fft.h>
 #include <iostream>
 #include <numeric>
@@ -533,8 +533,13 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
     std::vector<std::complex<float>> xCarrier;
     xCarrier.reserve(samplesPerCode * 10);
     gr_complex longSignalMean =
-        std::accumulate(longSignal.begin(), longSignal.end(), std::complex<float>(0.0, 0.0)) /
+        std::accumulate(longSignal.begin(), longSignal.end(), std::complex<float>(0, 0)) /
         (float)longSignal.size();
+    // float longSignalMean;
+    // for (int i = 0; i < samplesPerCode * 10; i++) {
+    //   longSignalMean = longSignal.at(i + codePhase).real();
+    // }
+    // longSignalMean = longSignalMean / (samplesPerCode * 10);
     for (int i = 0; i < samplesPerCode * 10; i++) {
       int index = floor(ts * i * codeFreqBasis);
       int caCodeIndex = index % 1023;
@@ -555,17 +560,17 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
     memcpy(fftxc.data(), fft_cmplx_fwd.get_outbuf(), sizeof(gr_complex) * fftNumPts);
     std::vector<float> fftxcAbs;
     fftxcAbs.reserve(fftxc.size());
-    std::ofstream outputFile("fftxcAbs.txt");
+    // std::ofstream outputFile("fftxcAbs.txt");
     for (auto val : fftxc) {
-      outputFile << std::abs(val) << "\n";
+      // outputFile << std::abs(val) << "\n";
       fftxcAbs.push_back(std::abs(val));
     }
 
     int uniqFftPts = ceil((fftNumPts + 1) / 2);
 
-    int fftMaxIndex = std::max_element(fftxcAbs.begin() + 4, fftxcAbs.begin() + uniqFftPts - 5) -
-                      fftxcAbs.begin() - 4;
-    float carrFreq = fftMaxIndex * sampleFreq / fftNumPts;
+    int fftMaxIndex =
+        std::max_element(fftxcAbs.begin(), fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin();
+    float carrFreq = (fftMaxIndex - 3) * sampleFreq / fftNumPts;
 
     // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ",
     // CodePhase: " << codePhase << std::endl;

@@ -67,11 +67,11 @@ int decimator_impl::work(int noutput_items, gr_vector_const_void_star &input_ite
 
     int result{};
     if (valueIndex >= 0) {
-      // result = in[valueIndex] > 0 ? 1 : -1;
-      result = in[valueIndex];
+      result = in[valueIndex] > 0 ? 1 : -1;
+      // result = in[valueIndex];
     }
 
-    out[j] = in[valueIndex];
+    out[j] = result;
     valueIndex = -1;
   }
 

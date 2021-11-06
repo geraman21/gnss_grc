@@ -61,11 +61,11 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
     // }
   });
   Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
-  longSignal.reserve(11000 * samplesPerCode);
   paddedCaTable.reserve(33);
   makePaddedCaTable(paddedCaTable);
   codePhaseStep = codeFreq * samplePeriod;
   samplesPerCode = round(sampleFreq / (codeFreqBasis / codeLength));
+  longSignal.reserve(11 * samplesPerCode);
   blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
   calcloopCoef(tau1carr, tau2carr, pllNoiseBandwidth, pllDampingRatio, loopGainCarr, PDI);
   calcloopCoef(tau1code, tau2code, dllNoiseBandwidth, dllDampingRatio, loopGainCode, PDI);
@@ -159,7 +159,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       if (longSignal.size() < 11 * samplesPerCode) {
         longSignal.push_back(in[i]);
       } else {
-        auto size = sizeof(float) * longSignal.size();
+        auto size = sizeof(gr_complex) * longSignal.size();
         auto pmt = pmt::make_blob(longSignal.data(), size);
         message_port_pub(pmt::mp("data_vector"), pmt::cons(pmt::from_long(PRN), pmt));
         longSignal.clear();
