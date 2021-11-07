@@ -71,7 +71,8 @@ int decimator_impl::work(int noutput_items, gr_vector_const_void_star &input_ite
       // result = in[valueIndex];
     }
 
-    out[j] = result;
+    // out[j] = result;
+    out[j] = in[valueIndex];
     valueIndex = -1;
   }
 

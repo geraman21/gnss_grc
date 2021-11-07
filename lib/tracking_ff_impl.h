@@ -36,9 +36,9 @@ private:
   int msForQualityCheck = 1000;
   int msToStabilize = 500;
   int msCount{};
-  int signChangeCount{};
-  int positiveCorrCount;
-  int negativeCorrCount;
+  int bitTransitionCount{};
+  int positiveCorrCount{};
+  int negativeCorrCount{};
   bool trackingLocked = false;
   bool sendTag = false;
   // for sin cos calculations

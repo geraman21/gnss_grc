@@ -96,7 +96,7 @@ void tracking_ff_impl::startReaquisition() {
 }
 void tracking_ff_impl::reset() {
   msCount = 0;
-  signChangeCount = 0;
+  bitTransitionCount = 0;
   remCodePhase = 0.0;
   remCarrPhase = 0.0;
   oldCarrNco = 0.0;
@@ -129,18 +129,18 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
     double ratio = positiveCorrCount > negativeCorrCount
                        ? positiveCorrCount * 1.0 / negativeCorrCount
                        : negativeCorrCount * 1.0 / positiveCorrCount;
-    if (signChangeCount > msForQualityCheck / 20 + 5 || signChangeCount < 10 || ratio > 3) {
-      std::cout << "PRN:  " << PRN << "  Quality Check failed:   " << signChangeCount << "    "
+    if (bitTransitionCount > msForQualityCheck / 20 + 5 || bitTransitionCount < 10 || ratio > 3) {
+      std::cout << "PRN:  " << PRN << "  Quality Check failed:   " << bitTransitionCount << "    "
                 << ratio << std::endl;
       startReaquisition();
       trackingLocked = false;
     } else {
       trackingLocked = true;
     }
-    // std::cout << "Quality Results:   " << signChangeCount << "     out of    "
+    // std::cout << "Quality Results:   " << bitTransitionCount << "     out of    "
     //           << msForQualityCheck / 20 << std::endl;
     msCount = 0;
-    signChangeCount = 0;
+    bitTransitionCount = 0;
     positiveCorrCount = 0;
     negativeCorrCount = 0;
   }
@@ -223,16 +223,25 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       // and reset iterator else incr iterator
       if (iterator == blksize - 1) {
         std::complex<float> currentOutput = I_P + Q_P;
+        bool complexSignal = currentOutput.imag() != 0;
         // quality check whether we receive a real 50hz signal, allow 200ms for channel to stabilize
-        if (signbit(prevOutput.real()) != signbit(currentOutput.real()) &&
-            msCount > msToStabilize) {
-          signChangeCount++;
+        if (signbit(prevOutput.real()) != signbit(I_P.real()) && msCount > msToStabilize) {
+          bitTransitionCount++;
         }
+        if (complexSignal) {
+          currentOutput.real() > 0 ? positiveCorrCount++ : negativeCorrCount++;
+        } else {
+          I_P.real() > 0 ? positiveCorrCount++ : negativeCorrCount++;
+        }
+
+        prevOutput = I_P;
+
         // Update output value to I_P
-
-        currentOutput.real() > 0 ? positiveCorrCount++ : negativeCorrCount++;
-
-        output = currentOutput.real();
+        if (complexSignal) {
+          output = currentOutput.real();
+        } else {
+          output = I_P.real();
+        }
         remCarrPhase =
             fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase), (2 * M_PI));
 
@@ -246,12 +255,13 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
-        auto cross =
-            currentOutput.real() * prevOutput.imag() - prevOutput.real() * currentOutput.imag();
-        auto dot = std::abs(currentOutput.real() * prevOutput.real() +
-                            prevOutput.imag() * currentOutput.imag());
 
-        float carrError = atan(currentOutput.imag() / currentOutput.real()) / (2.0 * M_PI);
+        float carrError;
+        if (complexSignal) {
+          carrError = atan(currentOutput.imag() / currentOutput.real()) / (2.0 * M_PI);
+        } else {
+          carrError = atan(Q_P.real() / I_P.real()) / (2.0 * M_PI);
+        }
 
         // Implement carrier loop filter and generate NCO command
 
@@ -260,9 +270,14 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         oldCarrError = carrError;
         //  Modify carrier freq based on NCO command
         carrFreq = carrFreqBasis + carrNco;
-
-        float sqrtEarly = std::abs(I_E + Q_E);
-        float sqrtLate = std::abs(I_L + Q_L);
+        float sqrtEarly, sqrtLate;
+        if (complexSignal) {
+          sqrtEarly = std::abs(I_E + Q_E);
+          sqrtLate = std::abs(I_L + Q_L);
+        } else {
+          sqrtEarly = sqrt(I_E.real() * I_E.real() + Q_E.real() * Q_E.real());
+          sqrtLate = sqrt(I_L.real() * I_L.real() + Q_L.real() * Q_L.real());
+        }
         float codeError = (sqrtEarly - sqrtLate) / (sqrtEarly + sqrtLate);
 
         //  Implement code loop filter and generate NCO command
@@ -276,21 +291,16 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         // update blksize
         blksize = std::ceil((codeLength - remCodePhase) / codePhaseStep);
 
-        // if (test > 10000 && test < 10100) {
-        //   std::cout << "    " << blksize << std::endl;
-        // }
-        // test++;
-
         // Reset early late and prompt correlation results and set iterator to 0
         Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
-        prevOutput = currentOutput;
         iterator = 0;
         msCount++;
       } else {
         iterator++;
       }
     }
-    out[i] = output && trackingLocked ? output : 0;
+    // out[i] = output && trackingLocked ? output : 0;
+    out[i] = output ? output : 0;
     output = 0;
   }
 
