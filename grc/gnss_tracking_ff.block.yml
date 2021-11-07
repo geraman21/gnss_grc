@@ -4,7 +4,7 @@ category: "[gnss]"
 
 templates:
   imports: import gnss
-  make: gnss.tracking_ff(${_channelNum}, ${_sampleFreq}, ${pll_nbw}, ${pll_dr}, ${pll_lg}, ${dll_nbw}, ${dll_dr}, ${dll_lg})
+  make: gnss.tracking_ff(${_channelNum}, ${_sampleFreq}, ${pll_nbw}, ${dll_nbw})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -24,26 +24,10 @@ parameters:
     label: PLL Noise Bandwidth
     dtype: float
     default: pll_nbw
-  - id: pll_dr
-    label: PLL Damping Ratio
-    dtype: float
-    default: pll_dr
-  - id: pll_lg
-    label: PLL Loop Gain
-    dtype: float
-    default: pll_lg
   - id: dll_nbw
     label: DLL Noise Bandwidth
     dtype: float
     default: dll_nbw
-  - id: dll_dr
-    label: DLL Damping Ratio
-    dtype: float
-    default: dll_dr
-  - id: dll_lg
-    label: DLL Loop Gain
-    dtype: float
-    default: dll_lg
 
 # - id: parametername_replace_me
 #   label: FIX ME:
@@ -62,7 +46,7 @@ parameters:
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
   - label: in
-    dtype: float
+    dtype: complex
     optional: true
   - domain: message
     id: acquisition

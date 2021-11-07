@@ -20,29 +20,24 @@
 namespace gr {
 namespace gnss {
 
-using input_type = float;
+using input_type = gr_complex;
 using output_type = float;
-tracking_ff::sptr tracking_ff::make(int _channelNum, float _sampleFreq, float pll_nbw, float pll_dr,
-                                    float pll_lg, float dll_nbw, float dll_dr, float dll_lg) {
-  return gnuradio::make_block_sptr<tracking_ff_impl>(_channelNum, _sampleFreq, pll_nbw, pll_dr,
-                                                     pll_lg, dll_nbw, dll_dr, dll_lg);
+tracking_ff::sptr tracking_ff::make(int _channelNum, float _sampleFreq, float pll_nbw,
+                                    float dll_nbw) {
+  return gnuradio::make_block_sptr<tracking_ff_impl>(_channelNum, _sampleFreq, pll_nbw, dll_nbw);
 }
 
 /*
  * The private constructor
  */
 
-tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll_nbw, float pll_dr,
-                                   float pll_lg, float dll_nbw, float dll_dr, float dll_lg)
+tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll_nbw, float dll_nbw)
     : gr::sync_block(
           "tracking_ff",
           gr::io_signature::make(1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
       channelNum{_channelNum}, samplePeriod{1 / _sampleFreq}, sampleFreq{_sampleFreq},
-      pllNoiseBandwidth{pll_nbw}, pllDampingRatio{pll_dr},
-      loopGainCarr(pll_lg), dllNoiseBandwidth{dll_nbw}, dllDampingRatio{dll_dr}, loopGainCode{
-                                                                                     dll_lg} {
-  // channel = new Channel(21, 9547426.34201050, 13404, 'T');
+      pllNoiseBandwidth{pll_nbw}, dllNoiseBandwidth{dll_nbw} {
   message_port_register_in(pmt::string_to_symbol("acquisition"));
   message_port_register_out(pmt::string_to_symbol("data_vector"));
   set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg) {
@@ -53,18 +48,24 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
       PRN = acqResult.PRN;
       startReaquisition();
     } else if (pmt::symbol_to_string(msg_key) == "acq_start") {
-      if (PRN == acqResult.PRN)
-        handleAcqStart(acqResult);
-    } else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
-      if (PRN == acqResult.PRN)
-        haltTracking();
+      if (PRN == acqResult.PRN) {
+        if (acqResult.peakMetric > 0)
+          handleAcqStart(acqResult);
+        else
+          startReaquisition();
+      }
     }
+    // else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
+    //   if (PRN == acqResult.PRN)
+    //     haltTracking();
+    // }
   });
-  longSignal.reserve(11000 * samplesPerCode);
+  Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
   paddedCaTable.reserve(33);
   makePaddedCaTable(paddedCaTable);
   codePhaseStep = codeFreq * samplePeriod;
   samplesPerCode = round(sampleFreq / (codeFreqBasis / codeLength));
+  longSignal.reserve(11 * samplesPerCode);
   blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
   calcloopCoef(tau1carr, tau2carr, pllNoiseBandwidth, pllDampingRatio, loopGainCarr, PDI);
   calcloopCoef(tau1code, tau2code, dllNoiseBandwidth, dllDampingRatio, loopGainCode, PDI);
@@ -94,6 +95,8 @@ void tracking_ff_impl::startReaquisition() {
   totalSamples = 0;
 }
 void tracking_ff_impl::reset() {
+  msCount = 0;
+  bitTransitionCount = 0;
   remCodePhase = 0.0;
   remCarrPhase = 0.0;
   oldCarrNco = 0.0;
@@ -103,7 +106,7 @@ void tracking_ff_impl::reset() {
   carrFreq = 0.0;
   codeFreq = codeFreqBasis;
   iterator = 0;
-  Q_E = I_E = Q_P = I_P = Q_L = I_L = 0.0;
+  Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
 }
 
 void tracking_ff_impl::haltTracking() {
@@ -122,13 +125,24 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
 
   // Restart the channel if output data bitrate is above 50hz
   // Allow 200ms for channel to stabilize
-  if (msCount >= msForQualityCheck + 200) {
-    if (signChangeCount > msForQualityCheck / 20) {
-      std::cout << "PRN:  " << PRN << "  Quality Check failed, restarting..." << std::endl;
+  if (msCount >= msForQualityCheck + msToStabilize) {
+    double ratio = positiveCorrCount > negativeCorrCount
+                       ? positiveCorrCount * 1.0 / negativeCorrCount
+                       : negativeCorrCount * 1.0 / positiveCorrCount;
+    if (bitTransitionCount > msForQualityCheck / 20 + 5 || bitTransitionCount < 10 || ratio > 3) {
+      std::cout << "PRN:  " << PRN << "  Quality Check failed:   " << bitTransitionCount << "    "
+                << ratio << std::endl;
       startReaquisition();
+      trackingLocked = false;
+    } else {
+      trackingLocked = true;
     }
+    // std::cout << "Quality Results:   " << bitTransitionCount << "     out of    "
+    //           << msForQualityCheck / 20 << std::endl;
     msCount = 0;
-    signChangeCount = 0;
+    bitTransitionCount = 0;
+    positiveCorrCount = 0;
+    negativeCorrCount = 0;
   }
 
   // Declare Early Late and Prompt code variables and their starting points
@@ -145,7 +159,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       if (longSignal.size() < 11 * samplesPerCode) {
         longSignal.push_back(in[i]);
       } else {
-        auto size = sizeof(float) * longSignal.size();
+        auto size = sizeof(gr_complex) * longSignal.size();
         auto pmt = pmt::make_blob(longSignal.data(), size);
         message_port_pub(pmt::mp("data_vector"), pmt::cons(pmt::from_long(PRN), pmt));
         longSignal.clear();
@@ -160,6 +174,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       if (codePhase == 0) {
         reset();
         doTracking = true;
+        // std::cout << "PRN    " << PRN << "   alligned tracking started" << std::endl;
       }
     }
 
@@ -168,7 +183,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       if (isnan(iteratorStep))
         continue;
       // Generate Early CA Code.
-      int earlyCode{}, lateCode{}, promptCode{};
+      float earlyCode{}, lateCode{}, promptCode{};
 
       earlyCode = paddedCaTable.at(PRN).at(std::ceil(tStartEarly + iteratorStep));
 
@@ -194,8 +209,8 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       resCos = newResCos;
       resSin = newResSin;
 
-      float qSignal = in[i] * resCos;
-      float iSignal = in[i] * resSin;
+      gr_complex qSignal = in[i] * resCos;
+      gr_complex iSignal = in[i] * resSin;
 
       Q_E += earlyCode * qSignal;
       I_E += earlyCode * iSignal;
@@ -207,14 +222,26 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
       // When 1 ms of data is processed update code and carr remaining phase values
       // and reset iterator else incr iterator
       if (iterator == blksize - 1) {
+        std::complex<float> currentOutput = I_P + Q_P;
+        bool complexSignal = currentOutput.imag() != 0;
         // quality check whether we receive a real 50hz signal, allow 200ms for channel to stabilize
-        if (signbit(prevOutput) != signbit(I_P) && msCount > 200)
-          signChangeCount++;
+        if (signbit(prevOutput.real()) != signbit(I_P.real()) && msCount > msToStabilize) {
+          bitTransitionCount++;
+        }
+        if (complexSignal) {
+          currentOutput.real() > 0 ? positiveCorrCount++ : negativeCorrCount++;
+        } else {
+          I_P.real() > 0 ? positiveCorrCount++ : negativeCorrCount++;
+        }
 
-        // Update output value to I_P
-        output = I_P;
         prevOutput = I_P;
 
+        // Update output value to I_P
+        if (complexSignal) {
+          output = currentOutput.real();
+        } else {
+          output = I_P.real();
+        }
         remCarrPhase =
             fmodf((carrFreq * 2 * M_PI * ((blksize)*samplePeriod) + remCarrPhase), (2 * M_PI));
 
@@ -224,12 +251,17 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         tag_t tag;
         tag.offset = this->nitems_written(0) + i;
         tag.key = pmt::mp(std::to_string(PRN));
-        tag.value = pmt::from_uint64(absSampleCount);
         this->add_item_tag(0, tag);
 
         //  Find PLL error and update carrier NCO
         //  Implement carrier loop discriminator (phase detector)
-        float carrError = atan(Q_P / I_P) / (2.0 * M_PI);
+
+        float carrError;
+        if (complexSignal) {
+          carrError = atan(currentOutput.imag() / currentOutput.real()) / (2.0 * M_PI);
+        } else {
+          carrError = atan(Q_P.real() / I_P.real()) / (2.0 * M_PI);
+        }
 
         // Implement carrier loop filter and generate NCO command
 
@@ -238,9 +270,14 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         oldCarrError = carrError;
         //  Modify carrier freq based on NCO command
         carrFreq = carrFreqBasis + carrNco;
-
-        float sqrtEarly = sqrt(I_E * I_E + Q_E * Q_E);
-        float sqrtLate = sqrt(I_L * I_L + Q_L * Q_L);
+        float sqrtEarly, sqrtLate;
+        if (complexSignal) {
+          sqrtEarly = std::abs(I_E + Q_E);
+          sqrtLate = std::abs(I_L + Q_L);
+        } else {
+          sqrtEarly = sqrt(I_E.real() * I_E.real() + Q_E.real() * Q_E.real());
+          sqrtLate = sqrt(I_L.real() * I_L.real() + Q_L.real() * Q_L.real());
+        }
         float codeError = (sqrtEarly - sqrtLate) / (sqrtEarly + sqrtLate);
 
         //  Implement code loop filter and generate NCO command
@@ -254,19 +291,15 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         // update blksize
         blksize = std::ceil((codeLength - remCodePhase) / codePhaseStep);
 
-        // if (test > 10000 && test < 10100) {
-        //   std::cout << "    " << blksize << std::endl;
-        // }
-        // test++;
-
         // Reset early late and prompt correlation results and set iterator to 0
-        Q_E = I_E = Q_P = I_P = Q_L = I_L = 0;
+        Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
         iterator = 0;
         msCount++;
       } else {
         iterator++;
       }
     }
+    // out[i] = output && trackingLocked ? output : 0;
     out[i] = output ? output : 0;
     output = 0;
   }

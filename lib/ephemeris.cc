@@ -36,6 +36,7 @@ void Ephemeris::printEphemeris() {
   std::cout << "omegaDot : " << omegaDot << std::endl;
   std::cout << " IODE_sf3: " << IODE_sf3 << std::endl;
   std::cout << "iDot : " << iDot << std::endl;
+  std::cout << "TOW : " << TOW << std::endl;
 }
 
 Ephemeris::Ephemeris(std::vector<int> &navBits, int channel) {
@@ -66,13 +67,10 @@ Ephemeris::Ephemeris(std::vector<int> &navBits, int channel) {
           bin2dec(std::vector<int>(subframe.begin() + 61 - 1, subframe.begin() + 70)) + 1024;
       accuracy = bin2dec(vecSelector(subframe, 73, 76));
 
-      for (auto i : std::vector<int>(subframe.begin() + 73 - 1, subframe.begin() + 76)) {
-      };
-
       health = bin2dec(vecSelector(subframe, 77, 82));
       T_GD = twosComp2dec(vecSelector(subframe, 197, 204)) * pow(2, -31);
 
-      IODC = bin2dec(vecSelector(subframe, 83, 84, 197, 204));
+      IODC = bin2dec(vecSelector(subframe, 83, 84, 211, 218));
 
       t_oc = bin2dec(vecSelector(subframe, 219, 234)) * pow(2, 4);
       a_f2 = twosComp2dec(vecSelector(subframe, 241, 248)) * pow(2, -55);

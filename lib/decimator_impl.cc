@@ -48,19 +48,32 @@ int decimator_impl::work(int noutput_items, gr_vector_const_void_star &input_ite
   this->get_tags_in_range(tags, 0, nread, nread + ninput_items);
 
   for (int j = 0; j < noutput_items; j++) {
+    absSampleCount++;
     for (int i = j * decimation; i < j * decimation + decimation; i++) {
       if (in[i] != 0) {
         valueIndex = i;
       }
     }
+    tag_t tag;
+    tag.offset = this->nitems_written(0) + j;
     if (tags.size() == noutput_items) {
-      tag_t tag;
-      tag.offset = this->nitems_written(0) + j;
       tag.key = tags.at(j).key;
-      tag.value = tags.at(j).value;
-      this->add_item_tag(0, tag);
+      tag.value = pmt::from_uint64(nitems_read(0) + valueIndex + 1);
+    } else {
+      tag.key = pmt::mp(std::to_string(0));
+      tag.value = pmt::from_uint64(0);
     }
+    this->add_item_tag(0, tag);
+
+    int result{};
+    if (valueIndex >= 0) {
+      result = in[valueIndex] > 0 ? 1 : -1;
+      // result = in[valueIndex];
+    }
+
+    // out[j] = result;
     out[j] = in[valueIndex];
+    valueIndex = -1;
   }
 
   // Tell runtime system how many output items we produced.

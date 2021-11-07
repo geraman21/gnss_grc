@@ -29,7 +29,7 @@ parameters:
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
   - label: in
-    dtype: float
+    dtype: complex
     optional: true
   - domain: message
     id: acquisition
@@ -38,7 +38,7 @@ inputs:
 
 outputs:
   - label: out
-    dtype: float
+    dtype: complex
     optional: true
   - domain: message
     id: data_vector

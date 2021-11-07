@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(1)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(nav_solution.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(d85750dbb977ddd197af331d4efa428c)                     */
+/* BINDTOOL_HEADER_FILE_HASH(06ba248b30fff057840765e472cd0673)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -31,10 +31,11 @@ void bind_nav_solution(py::module &m) {
 
   using nav_solution = gr::gnss::nav_solution;
 
-  py::class_<nav_solution, gr::sync_block, gr::block, gr::basic_block,
-             std::shared_ptr<nav_solution>>(m, "nav_solution", D(nav_solution))
+  py::class_<nav_solution, gr::sync_decimator, std::shared_ptr<nav_solution>>(m, "nav_solution",
+                                                                              D(nav_solution))
 
-      .def(py::init(&nav_solution::make), D(nav_solution, make))
+      .def(py::init(&nav_solution::make), py::arg("_sampleFreq"), py::arg("_updateRate"),
+           D(nav_solution, make))
 
       ;
 }

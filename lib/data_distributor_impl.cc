@@ -6,12 +6,13 @@
  */
 
 #include "data_distributor_impl.h"
+#include "acqResults.h"
 #include <gnuradio/io_signature.h>
 
 namespace gr {
 namespace gnss {
-using input_type = float;
-using output_type = float;
+using input_type = gr_complex;
+using output_type = gr_complex;
 data_distributor::sptr data_distributor::make(float numSamples) {
   return gnuradio::make_block_sptr<data_distributor_impl>(numSamples);
 }
@@ -30,7 +31,10 @@ data_distributor_impl::data_distributor_impl(float numSamples)
   message_port_register_in(pmt::string_to_symbol("acquisition"));
   set_msg_handler(pmt::mp("acquisition"), [this](const pmt::pmt_t &msg) {
     auto msg_key = pmt::car(msg);
+    auto msg_val = pmt::cdr(msg);
+    AcqResults acqResult = *(reinterpret_cast<const AcqResults *>(pmt::blob_data(msg_val)));
     if (pmt::symbol_to_string(msg_key) == "acq_restart" && !acqInProgress) {
+      PRN = acqResult.PRN;
       distribute = true;
       acqInProgress = true;
       iterator = 0;
@@ -59,9 +63,9 @@ int data_distributor_impl::work(int noutput_items, gr_vector_const_void_star &in
       lognSignal.push_back(in[i]);
       iterator++;
     } else if (distribute && lognSignal.size() >= samplesToSend) {
-      auto size = sizeof(float) * lognSignal.size();
+      auto size = sizeof(gr_complex) * lognSignal.size();
       auto pmt = pmt::make_blob(lognSignal.data(), size);
-      message_port_pub(pmt::string_to_symbol("data_vector"), pmt);
+      message_port_pub(pmt::string_to_symbol("data_vector"), pmt::cons(pmt::from_long(PRN), pmt));
       iterator = 0;
       lognSignal.clear();
       lognSignal.reserve(samplesToSend);

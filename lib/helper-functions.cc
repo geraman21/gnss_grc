@@ -6,6 +6,7 @@
 #include <cmath>
 #include <complex>
 #include <deque>
+// #include <fstream>
 #include <gnuradio/fft/fft.h>
 #include <iostream>
 #include <numeric>
@@ -210,8 +211,43 @@ int parityCheck(std::vector<int> &bits, int index) {
     return 0;
 }
 
-int findSubframeStart(std::deque<int> &buffer) {
+unsigned int bin2dec(std::vector<int> vec) {
+  unsigned int decimal = 0;
+
+  for (int i = 0; i < vec.size(); i++) {
+    int bit = vec.at(i) > 0 ? 1 : 0;
+    decimal = decimal * 2 + bit;
+  }
+  return decimal;
+}
+
+int twosComp2dec(std::vector<int> vec) {
+  if (vec.front() == 1) {
+    std::for_each(vec.begin(), vec.end(), [](int &a) { a == 0 ? a = 1 : a = 0; });
+    return -(bin2dec(vec) + 1);
+  } else
+    return bin2dec(vec);
+}
+
+std::vector<int> vecSelector(std::vector<int> &source, int start, int end) {
+  if (start < 0 || start >= end || end > source.size())
+    return std::vector<int>(1, -1);
+  return std::vector<int>(source.begin() + start - 1, source.begin() + end);
+}
+
+std::vector<int> vecSelector(std::vector<int> &source, int start, int end, int start1, int end1) {
+  if (start < 0 || start >= end || end > source.size() || start1 < 0 || start1 >= end1 ||
+      end1 > source.size())
+    return std::vector<int>(1, -1);
+
+  std::vector<int> temp(source.begin() + start - 1, source.begin() + end);
+  temp.insert(temp.end(), source.begin() + start1 - 1, source.begin() + end1);
+  return temp;
+}
+
+std::tuple<int, int> findSubframeStart(std::deque<int> &buffer) {
   int subframeStart = 0;
+  int TOW = 0;
   auto corrResult = std::vector<int>(buffer.size() + 159);
   // Invert and spread preamble over 20 to find correlation using convolve
   // function: { 1, 1, 0, 1, 0, 0, 0, 1 }
@@ -283,46 +319,19 @@ int findSubframeStart(std::deque<int> &buffer) {
 
         if (parity1 != 0 && parity2 != 0) {
           subframeStart = index;
+          std::vector<int> temp = vecSelector(bits, 33, 49);
+          if (bits.at(1) == 1) {
+            std::transform(temp.begin(), temp.end(), temp.begin(),
+                           [](int a) { return a > 0 ? 0 : 1; });
+          }
+          TOW = bin2dec(temp) * 6;
           goto endloop;
         }
       }
     }
   }
 endloop:
-  return subframeStart;
-}
-
-unsigned int bin2dec(std::vector<int> vec) {
-  unsigned int decimal = 0;
-
-  for (int i = 0; i < vec.size(); i++) {
-    decimal = decimal * 2 + vec.at(i);
-  }
-  return decimal;
-}
-
-int twosComp2dec(std::vector<int> vec) {
-  if (vec.front() == 1) {
-    std::for_each(vec.begin(), vec.end(), [](int &a) { a == 0 ? a = 1 : a = 0; });
-    return -(bin2dec(vec) + 1);
-  } else
-    return bin2dec(vec);
-}
-
-std::vector<int> vecSelector(std::vector<int> &source, int start, int end) {
-  if (start < 0 || start >= end || end > source.size())
-    return std::vector<int>(1, -1);
-  return std::vector<int>(source.begin() + start - 1, source.begin() + end);
-}
-
-std::vector<int> vecSelector(std::vector<int> &source, int start, int end, int start1, int end1) {
-  if (start < 0 || start >= end || end > source.size() || start1 < 0 || start1 >= end1 ||
-      end1 > source.size())
-    return std::vector<int>(1, -1);
-
-  std::vector<int> temp(source.begin() + start - 1, source.begin() + end);
-  temp.insert(temp.end(), source.begin() + start1 - 1, source.begin() + end1);
-  return temp;
+  return {subframeStart, TOW};
 }
 
 std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double startOffset,
@@ -332,7 +341,7 @@ std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double star
   int minimum = floor(*std::min_element(pseudoRanges.begin(), pseudoRanges.end()));
   std::transform(pseudoRanges.begin(), pseudoRanges.end(), pseudoRanges.begin(),
                  [minimum, startOffset, c](double a) {
-                   return a == 0 ? 0 : ((a - (double)minimum + startOffset) * (double)c / 1000.0);
+                   return ((a - (double)minimum + startOffset) * (double)c / 1000.0);
                  });
 
   return pseudoRanges;
@@ -378,10 +387,12 @@ void custom_ifft(std::valarray<std::complex<double>> &x) {
 
 std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
                                                  std::vector<std::complex<float>> &caCodeVector,
-                                                 std::vector<float> &longSignal) {
+                                                 std::vector<std::complex<float>> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
-  int numberOfFrqBins = 100;
+  int dopplerShift = 15000;
+  int frequencyStep = 200;
+  int numberOfFrqBins = dopplerShift * 2 / frequencyStep;
   std::vector<int> frqBins(numberOfFrqBins, 0);
   std::vector<std::vector<float>> results(numberOfFrqBins);
   float codeFreqBasis = 1023000;
@@ -397,7 +408,7 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
 
   for (int frqBinIndex = 0; frqBinIndex < numberOfFrqBins; frqBinIndex++) {
     //  Generate carrier wave frequency grid (0.5kHz step)
-    frqBins.at(frqBinIndex) = IF - 10000 + 0.2e3 * frqBinIndex;
+    frqBins.at(frqBinIndex) = IF - dopplerShift + frequencyStep * frqBinIndex;
     std::vector<std::complex<float>> IQSignal1(samplesPerCode);
     std::vector<std::complex<float>> IQSignal2(samplesPerCode);
     for (int k = 0; k < samplesPerCode; k++) {
@@ -406,13 +417,13 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
       float sinCarr, cosCarr;
       sinCarr = sinf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
       cosCarr = cosf(k * 2 * M_PI * ts * frqBins.at(frqBinIndex));
-      float I1 = sinCarr * longSignal.at(k);
-      float Q1 = cosCarr * longSignal.at(k);
-      float I2 = sinCarr * longSignal.at(k + samplesPerCode);
-      float Q2 = cosCarr * longSignal.at(k + samplesPerCode);
+      gr_complex I1 = sinCarr * longSignal.at(k);
+      gr_complex Q1 = cosCarr * longSignal.at(k);
+      gr_complex I2 = sinCarr * longSignal.at(k + samplesPerCode);
+      gr_complex Q2 = cosCarr * longSignal.at(k + samplesPerCode);
 
-      IQSignal1.at(k) = std::complex<float>(I1, Q1);
-      IQSignal2.at(k) = std::complex<float>(I2, Q2);
+      IQSignal1.at(k) = I1 + Q1;
+      IQSignal2.at(k) = I2 + Q2;
     }
 
     // IQSignal1 = fft(I1 + j * Q1);
@@ -511,45 +522,55 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
 // Acquisition for a certain PRN
 AcqResults performAcquisition(int PRN, float ts, float IF,
                               std::vector<std::complex<float>> &caCodeVector,
-                              std::vector<float> &longSignal) {
+                              std::vector<std::complex<float>> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
   float codeFreqBasis = 1023000;
 
   auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
-
-  if (channelStrength > 2.5) {
+  if (channelStrength > 2.0) {
     std::vector<int> caCode = generateCa(PRN);
     std::vector<std::complex<float>> xCarrier;
     xCarrier.reserve(samplesPerCode * 10);
-    float longSignalMean =
-        std::accumulate(longSignal.begin(), longSignal.end(), 0.0) / longSignal.size();
+    gr_complex longSignalMean =
+        std::accumulate(longSignal.begin(), longSignal.end(), std::complex<float>(0, 0)) /
+        (float)longSignal.size();
+    // float longSignalMean;
+    // for (int i = 0; i < samplesPerCode * 10; i++) {
+    //   longSignalMean = longSignal.at(i + codePhase).real();
+    // }
+    // longSignalMean = longSignalMean / (samplesPerCode * 10);
     for (int i = 0; i < samplesPerCode * 10; i++) {
       int index = floor(ts * i * codeFreqBasis);
       int caCodeIndex = index % 1023;
       xCarrier.push_back(std::complex<float>(
-          (longSignal.at(i + codePhase) - longSignalMean) * caCode.at(caCodeIndex), 0.0));
+          (longSignal.at(i + codePhase).real() - longSignalMean.real()) * caCode.at(caCodeIndex),
+          0));
+      // xCarrier.push_back((longSignal.at(i + codePhase)) *
+      //                    std::complex<float>(caCode.at(caCodeIndex), 0.0));
     }
 
     int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
-    gr::fft::fft_complex_fwd fft_num_pts(fftNumPts, 1);
+    gr::fft::fft_complex_fwd fft_cmplx_fwd(fftNumPts, 1);
 
-    std::complex<float> *ptr = fft_num_pts.get_inbuf();
+    std::complex<float> *ptr = fft_cmplx_fwd.get_inbuf();
     memcpy(&ptr[0], xCarrier.data(), sizeof(gr_complex) * samplesPerCode * 10);
-    fft_num_pts.execute();
+    fft_cmplx_fwd.execute();
     std::vector<std::complex<float>> fftxc(fftNumPts);
-    memcpy(fftxc.data(), fft_num_pts.get_outbuf(), sizeof(gr_complex) * fftNumPts);
+    memcpy(fftxc.data(), fft_cmplx_fwd.get_outbuf(), sizeof(gr_complex) * fftNumPts);
     std::vector<float> fftxcAbs;
     fftxcAbs.reserve(fftxc.size());
+    // std::ofstream outputFile("fftxcAbs.txt");
     for (auto val : fftxc) {
+      // outputFile << std::abs(val) << "\n";
       fftxcAbs.push_back(std::abs(val));
     }
 
     int uniqFftPts = ceil((fftNumPts + 1) / 2);
 
-    int fftMaxIndex = std::max_element(fftxcAbs.begin() + 4, fftxcAbs.begin() + uniqFftPts - 5) -
-                      fftxcAbs.begin() - 4;
-    float carrFreq = fftMaxIndex * sampleFreq / fftNumPts;
+    int fftMaxIndex =
+        std::max_element(fftxcAbs.begin(), fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin();
+    float carrFreq = (fftMaxIndex - 3) * sampleFreq / fftNumPts;
 
     // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ",
     // CodePhase: " << codePhase << std::endl;
@@ -562,11 +583,11 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
 // Acquisition for a certain PRN
 AcqResults checkIfChannelPresent(int PRN, float ts, float IF,
                                  std::vector<std::complex<float>> &caCodeVector,
-                                 std::vector<float> &longSignal) {
+                                 std::vector<std::complex<float>> &longSignal) {
 
   auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
 
-  if (channelStrength > 2.5) {
+  if (channelStrength > 3.0) {
     return AcqResults(PRN, 0, codePhase, channelStrength);
   } else
     return AcqResults(0, 0, 0, channelStrength);

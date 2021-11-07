@@ -40,23 +40,28 @@ channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, in
     auto msg_key = pmt::car(msg);
     auto msg_val = pmt::cdr(msg);
     int receivedPRN = pmt::to_long(msg_key);
-    std::cout << "Starter  working  PRN:   " << receivedPRN << std::endl;
     if (PRN != receivedPRN) {
       PRN = receivedPRN;
-      complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
+      if (PRN != 0)
+        complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
     }
-    if (attemptsLeft.at(PRN) > 0) {
-      std::cout << "PRN:   " << receivedPRN << "    attempts left:  " << attemptsLeft.at(PRN)
-                << std::endl;
-      const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));
+    if (attemptsLeft.at(PRN) > 0 && receivedPRN != 0) {
+      const gr_complex *data = reinterpret_cast<const gr_complex *>(pmt::blob_data(msg_val));
       longSignal.assign(data, data + longSignal.capacity());
       AcqResults acqResult = performAcquisition(PRN, ts, IF, complexCaVector, longSignal);
       acqResult.PRN = PRN;
       auto size = sizeof(AcqResults);
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
       message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_start"), pmt));
-      attemptsLeft.at(PRN)--;
+      if (acqResult.peakMetric == 0)
+        attemptsLeft.at(PRN)--;
+      std::cout << "Starter for  PRN:   " << receivedPRN
+                << "    attempts left:  " << attemptsLeft.at(PRN)
+                << "   Identified PeakMetric:   " << acqResult.peakMetric << std::endl;
+      std::cout << "Freq:  " << acqResult.carrFreq << "    Phase:  " << acqResult.codePhase
+                << std::endl;
     } else {
+      std::cout << "Channel Starter requested reacquisition for PRN:  " << PRN << std::endl;
       AcqResults acqResult = AcqResults(PRN, 0, 0, 0);
       auto size = sizeof(AcqResults);
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
