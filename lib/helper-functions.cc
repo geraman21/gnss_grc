@@ -43,32 +43,6 @@ double fast_sin(double x) {
   return x;
 }
 
-// float fast_sin(float x) {
-//   float sin = 0;
-//   if (x < -3.14159265f)
-//     x += 6.28318531f;
-//   else if (x > 3.14159265f)
-//     x -= 6.28318531f;
-
-//   if (x < 0) {
-//     sin = x * (1.27323954f + 0.405284735f * x);
-
-//     if (sin < 0)
-//       sin = sin * (-0.255f * (sin + 1) + 1);
-//     else
-//       sin = sin * (0.255f * (sin - 1) + 1);
-//   } else {
-//     sin = x * (1.27323954f - 0.405284735f * x);
-
-//     if (sin < 0)
-//       sin = sin * (-0.255f * (sin + 1) + 1);
-//     else
-//       sin = sin * (0.255f * (sin - 1) + 1);
-//   }
-
-//   return sin;
-// }
-
 void calcloopCoef(float &coeff1, float &coeff2, short loopNoiseBandwidth, float zeta,
                   float loopGain, float pdi) {
 
@@ -535,19 +509,12 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
     gr_complex longSignalMean =
         std::accumulate(longSignal.begin(), longSignal.end(), std::complex<float>(0, 0)) /
         (float)longSignal.size();
-    // float longSignalMean;
-    // for (int i = 0; i < samplesPerCode * 10; i++) {
-    //   longSignalMean = longSignal.at(i + codePhase).real();
-    // }
-    // longSignalMean = longSignalMean / (samplesPerCode * 10);
     for (int i = 0; i < samplesPerCode * 10; i++) {
       int index = floor(ts * i * codeFreqBasis);
       int caCodeIndex = index % 1023;
       xCarrier.push_back(std::complex<float>(
           (longSignal.at(i + codePhase).real() - longSignalMean.real()) * caCode.at(caCodeIndex),
           0));
-      // xCarrier.push_back((longSignal.at(i + codePhase)) *
-      //                    std::complex<float>(caCode.at(caCodeIndex), 0.0));
     }
 
     int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
@@ -572,8 +539,6 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
         std::max_element(fftxcAbs.begin(), fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin();
     float carrFreq = (fftMaxIndex - 3) * sampleFreq / fftNumPts;
 
-    // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ",
-    // CodePhase: " << codePhase << std::endl;
     AcqResults result(PRN, carrFreq, codePhase, channelStrength);
     return result;
   } else

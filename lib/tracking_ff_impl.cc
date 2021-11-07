@@ -299,8 +299,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         iterator++;
       }
     }
-    // out[i] = output && trackingLocked ? output : 0;
-    out[i] = output ? output : 0;
+    out[i] = output && trackingLocked ? output : 0;
     output = 0;
   }
 
