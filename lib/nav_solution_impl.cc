@@ -54,6 +54,7 @@ void nav_solution_impl::restartSubframeStartSearch() {
   iterator.resize(numberOfChannels, 0);
   gatherNavBits.clear();
   gatherNavBits.resize(numberOfChannels, true);
+  temp_TOW = 0;
 }
 
 bool nav_solution_impl::gatherBits() {
@@ -166,8 +167,13 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
           if (iterator.at(p) == samplesForSubframeStart - 1) {
             auto [s, t] = findSubframeStart(navBits.at(p));
             if (s != 0 && t != 0) {
-              subframeStart.at(p) = s;
-              temp_TOW = t;
+              if (temp_TOW == 0)
+                temp_TOW = t;
+
+              if (temp_TOW == t)
+                subframeStart.at(p) = s;
+              else
+                subframeStart.at(p) = s + (temp_TOW - t) * 1000;
               std::cout << "PRN:  " << PRN.at(p) << "    Subframe Start:  " << s
                         << "    TOW:  " << t << "    iterator:  " << iterator.at(p) << std::endl;
             } else {
