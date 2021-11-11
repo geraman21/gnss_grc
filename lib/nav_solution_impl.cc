@@ -190,33 +190,12 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
             receivedTime.at(p) =
                 (double)pmt::to_uint64(tags.at(p).at(i).value) / ((double)sampleFreq / 1000.0);
             gatherNavBits.at(p) = false;
-            // std::vector<int> ephBits;
-            // getEphemerisBits(subframeStart.at(p), navBits.at(p), ephBits);
-            // if (ephBits.size() >= 1501) {
-            //   ephemerides.at(p) = Ephemeris(ephBits, p);
-            //   if (TOW == 0) {
-            //     TOW = ephemerides.at(p).TOW;
-            //   }
-            //   std::cout << "TOW main:  " << TOW << "    from EPH:  " << ephemerides.at(p).TOW
-            //             << std::endl;
-            //   gatherNavBits.at(p) = false;
-            // } else {
-            //   std::cout << "Collecting ephBits failed restarting... " << ephBits.size()
-            //             << std::endl;
-            //   restartSubframeStartSearch();
-            //   break;
-            // }
-            // std::cout << "Ephemeris Data for PRN:  " << PRN.at(p) << "  ready" << std::endl;
           }
           iterator.at(p)++;
         }
       }
     }
 
-    // for (auto bits : navBits) {
-    //   std::cout << bits.size() << "     ";
-    // }
-    // std::cout << std::endl;
     std::vector<double> active_input_items;
     std::vector<Ephemeris> active_ephemerides;
     for (int p = 0; p < numberOfChannels; p++) {
