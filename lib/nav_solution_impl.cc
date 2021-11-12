@@ -38,9 +38,9 @@ nav_solution_impl::nav_solution_impl(float _sampleFreq, int _updateRate)
     Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
     if (data_object.channelNumber != -1) {
       ephemerides.at(data_object.channelNumber) = data_object;
-      +std::cout.precision(12);
-      data_object.printEphemeris();
-      std::cout << "============================" << std::endl;
+      std::cout.precision(12);
+      // data_object.printEphemeris();
+      // std::cout << "============================" << std::endl;
     }
   });
 }
@@ -229,7 +229,6 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
       for (int i = 0; i < active_input_items.size(); i++) {
         satPositions.at(i) = SatPosition(live_TOW, active_ephemerides.at(i));
         pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
-        // std::cout << pseudoRanges.at(i) << "     ";
       }
       std::cout << std::endl;
 

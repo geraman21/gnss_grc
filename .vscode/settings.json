@@ -92,7 +92,8 @@
     "numbers": "cpp",
     "queue": "cpp",
     "semaphore": "cpp",
-    "stack": "cpp"
+    "stack": "cpp",
+    "any": "cpp"
   },
   "cmake.configureOnOpen": true,
   "C_Cpp.clang_format_fallbackStyle": "{ ColumnLimit: 100 }"

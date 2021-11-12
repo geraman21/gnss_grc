@@ -317,7 +317,6 @@ std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double star
                  [minimum, startOffset, c](double a) {
                    return ((a - (double)minimum + startOffset) * (double)c / 1000.0);
                  });
-
   return pseudoRanges;
 }
 

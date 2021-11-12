@@ -54,6 +54,7 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
       std::cout.precision(1);
       result.PRN ? std::cout << std::fixed << PRN << " [ " << result.peakMetric << " ]   "
                  : std::cout << "   .   ";
+      // std::cout << std::fixed << PRN << " [ " << result.peakMetric << " ]   ";
       if (result.PRN)
         acqResults.push_back(result);
     }
@@ -65,12 +66,14 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
       // Send active channels to respective tracking blocks if no specific PRN provided
       for (int i = 0; i < channelNum; i++) {
         if (channels.at(i) == receivedPRN) {
-          if (acqResults.size() == 0)
+          if (acqResults.size() == 0) {
+            newChannelAcquired = false;
             break;
+          }
 
           acqResults.back().channelNumber = i;
-          // if (acqResults.back().PRN == 1) {
-          //   acqResults.back().PRN = 17;
+          // if (acqResults.back().PRN == 23) {
+          //   acqResults.back().PRN = 20;
           // }
           channels.at(i) = acqResults.back().PRN;
 
