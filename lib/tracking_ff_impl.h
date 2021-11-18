@@ -21,7 +21,6 @@ namespace gnss {
 
 class tracking_ff_impl : public tracking_ff {
 private:
-  uint64_t absSampleCount = 0;
   unsigned long int test = 0;
   unsigned long int totalSamples{};
   double totalRemCodePhase{};
@@ -34,7 +33,7 @@ private:
   int channelNum;
   bool restartTracking{false};
   int msForQualityCheck = 1000;
-  int msToStabilize = 500;
+  int msToStabilize = 2000;
   int msCount{};
   int bitTransitionCount{};
   int positiveCorrCount{};
@@ -84,7 +83,6 @@ private:
   void reset();
   void handleAcqStart(AcqResults acqResult);
   void startReaquisition();
-  void haltTracking();
 
 public:
   tracking_ff_impl(int _channelNum, float _sampleFreq, float pll_nbw, float dll_nbw);

@@ -72,16 +72,17 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
           }
 
           acqResults.back().channelNumber = i;
-          // if (acqResults.back().PRN == 23) {
-          //   acqResults.back().PRN = 20;
-          // }
+          if (acqResults.back().PRN == 21) {
+            acqResults.back().PRN = 6;
+          }
           channels.at(i) = acqResults.back().PRN;
 
           auto size = sizeof(AcqResults);
           auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults.back()), size);
           message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
           newChannelAcquired = true;
-          std::cout << "Assigned channel   " << i << "(" << receivedPRN << ")"
+          std::cout << "Assigned channel   " << acqResults.back().channelNumber << "("
+                    << receivedPRN << ")"
                     << "    new PRN value   " << acqResults.back().PRN << std::endl;
           acqResults.pop_back();
         }

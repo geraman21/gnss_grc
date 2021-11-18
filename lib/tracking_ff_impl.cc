@@ -55,10 +55,6 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
           startReaquisition();
       }
     }
-    // else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
-    //   if (PRN == acqResult.PRN)
-    //     haltTracking();
-    // }
   });
   Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
   paddedCaTable.reserve(33);
@@ -79,8 +75,8 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   codeFreq = codeFreqBasis;
   codePhaseStep = codeFreq * samplePeriod;
   blksize = ceil(codeLength / codePhaseStep);
-  restartAcquisition = false;
   unsigned long totalSamplesFromStart = totalSamples - acqResult.codePhase;
+  restartAcquisition = false;
   receivedCodePhase = blksize - (totalSamplesFromStart % blksize);
   codePhase = receivedCodePhase;
   carrFreq = acqResult.carrFreq;
@@ -107,15 +103,6 @@ void tracking_ff_impl::reset() {
   codeFreq = codeFreqBasis;
   iterator = 0;
   Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
-}
-
-void tracking_ff_impl::haltTracking() {
-  restartAcquisition = false;
-  collectSamples = false;
-  doTracking = false;
-  totalSamples = 0;
-  PRN = 0;
-  reset();
 }
 
 int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_items,
@@ -151,7 +138,6 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
   float tStartPrompt = remCodePhase;
   float tEndPrompt = blksize * codePhaseStep + remCodePhase;
   for (int i = 0; i < noutput_items; i++) {
-    absSampleCount++;
     if (restartAcquisition) {
       totalSamples++;
     }
