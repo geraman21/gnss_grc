@@ -257,13 +257,9 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         //  Modify carrier freq based on NCO command
         carrFreq = carrFreqBasis + carrNco;
         float sqrtEarly, sqrtLate;
-        if (complexSignal) {
-          sqrtEarly = std::abs(I_E + Q_E);
-          sqrtLate = std::abs(I_L + Q_L);
-        } else {
-          sqrtEarly = sqrt(I_E.real() * I_E.real() + Q_E.real() * Q_E.real());
-          sqrtLate = sqrt(I_L.real() * I_L.real() + Q_L.real() * Q_L.real());
-        }
+        sqrtEarly = std::abs(I_E + Q_E);
+        sqrtLate = std::abs(I_L + Q_L);
+
         float codeError = (sqrtEarly - sqrtLate) / (sqrtEarly + sqrtLate);
 
         //  Implement code loop filter and generate NCO command
