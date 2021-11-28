@@ -72,9 +72,6 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
           }
 
           acqResults.back().channelNumber = i;
-          if (acqResults.back().PRN == 21) {
-            acqResults.back().PRN = 6;
-          }
           channels.at(i) = acqResults.back().PRN;
 
           auto size = sizeof(AcqResults);

@@ -364,7 +364,7 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
   int dopplerShift = 12000;
-  int frequencyStep = 300;
+  int frequencyStep = 250;
   int numberOfFrqBins = dopplerShift * 2 / frequencyStep + 1;
   std::vector<int> frqBins(numberOfFrqBins, 0);
   std::vector<std::vector<float>> results(numberOfFrqBins);
@@ -394,9 +394,13 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
       gr_complex Q1 = cosCarr * longSignal.at(k);
       gr_complex I2 = sinCarr * longSignal.at(k + samplesPerCode);
       gr_complex Q2 = cosCarr * longSignal.at(k + samplesPerCode);
-
-      IQSignal1.at(k) = I1 + Q1;
-      IQSignal2.at(k) = I2 + Q2;
+      if (longSignal.at(k).imag() != 0) {
+        IQSignal1.at(k) = I1 + Q1;
+        IQSignal2.at(k) = I2 + Q2;
+      } else {
+        IQSignal1.at(k) = std::complex<float>(I1.real(), Q1.real());
+        IQSignal2.at(k) = std::complex<float>(I2.real(), Q2.real());
+      }
     }
 
     // IQSignal1 = fft(I1 + j * Q1);
@@ -427,20 +431,16 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
 
     std::vector<float> acqRes1, acqRes2;
     float max1{0}, max2{0};
-    int index1{0}, index2{0};
     for (int i = 0; i < samplesPerCode; i++) {
-
       float ac1 = std::pow(std::abs(IQSignal1.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
       float ac2 = std::pow(std::abs(IQSignal2.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
       acqRes1.push_back(ac1);
       acqRes2.push_back(ac2);
       if (max1 < ac1) {
         max1 = ac1;
-        index1 = i;
       }
       if (max2 < ac2) {
         max2 = ac2;
-        index2 = i;
       }
     }
 
