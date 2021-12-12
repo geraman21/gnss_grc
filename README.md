@@ -1,8 +1,10 @@
-Since the custom gnss module is written for Gnu Radio 3.9 it is advised to install the latest version of the software.  
-The best way to install latest gnu radio is to compile it from source, this ensures that all dependencies are installed.   
+This gnuradio module  requires Gnu Radio version 3.9 and above.  
+For Linux based systems it is fairly simple to compile Gnu Radio from source, this ensures that all dependencies are installed.   
 In order to do so, closely follow the guide, starting from Installing from Source: https://wiki.gnuradio.org/index.php/InstallingGR
 
-After installation is complete follow this guide to add Python path where required: https://wiki.gnuradio.org/index.php/ModuleNotFoundError
+Gnu Radio is also available on many software distributions. Check that the version is 3.9 and above before installing.
+
+After installation is complete follow this guide to add Python path where required if necessary: https://wiki.gnuradio.org/index.php/ModuleNotFoundError
 When asked to put exports into profile.d folder, any .sh file can be created in the folder with both export statements in it.  
 This .sh file will be executed upon login. 
 
@@ -15,12 +17,12 @@ cd build
 cmake ..
 make
 sudo make install
-sudo ldconfig
 ```
 When gnu radio is installed not in the default folder, you have to specify the installation path. For example when using homebrew on mac use the following command:
 
 ```
 cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/gnuradio/3.9.2.0_1
 ```
+Make sure to specify the correct installation folder according to the gnuradio version installed.
 
-After this is done click refresh in GRC GUI, and the custom module with all its block should be available via module selection list.
+After installation is complete, open GRC GUI and click refresh button, the custom module with all its block should be available inside the module selection list.
