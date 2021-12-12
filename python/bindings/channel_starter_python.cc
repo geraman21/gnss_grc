@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(1)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(channel_starter.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(d0bb78ded4e2a038aaf91641d2989f9c)                     */
+/* BINDTOOL_HEADER_FILE_HASH(dfa75ca1bb847ef384ebe3efb7bd44a2)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -35,7 +35,7 @@ void bind_channel_starter(py::module &m) {
       m, "channel_starter", D(channel_starter))
 
       .def(py::init(&channel_starter::make), py::arg("attempts"), py::arg("s_sampleFreq"),
-           D(channel_starter, make))
+           py::arg("im_freq"), D(channel_starter, make))
 
       ;
 }

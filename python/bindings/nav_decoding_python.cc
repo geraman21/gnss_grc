@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(1)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(nav_decoding.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(f08ee4296579ba0d3dad12ece002fec0)                     */
+/* BINDTOOL_HEADER_FILE_HASH(f669570491c422c91c473b1e2880390d)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -31,10 +31,11 @@ void bind_nav_decoding(py::module &m) {
 
   using nav_decoding = gr::gnss::nav_decoding;
 
-  py::class_<nav_decoding, gr::sync_decimator, std::shared_ptr<nav_decoding>>(m, "nav_decoding",
-                                                                              D(nav_decoding))
+  py::class_<nav_decoding, gr::sync_block, gr::block, gr::basic_block,
+             std::shared_ptr<nav_decoding>>(m, "nav_decoding", D(nav_decoding))
 
-      .def(py::init(&nav_decoding::make), py::arg("channelNum"), D(nav_decoding, make))
+      .def(py::init(&nav_decoding::make), py::arg("channelNum"), py::arg("_sampleFreq"),
+           D(nav_decoding, make))
 
       ;
 }

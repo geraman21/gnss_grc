@@ -33,10 +33,8 @@ ephemerides_impl::ephemerides_impl()
 
     navBits.clear();
     navBits.reserve(1501);
-
     const int *data = reinterpret_cast<const int *>(pmt::blob_data(msg_val));
     navBits.assign(data, data + navBits.capacity());
-
     Ephemeris ephResults(navBits, channel);
     auto size = sizeof(Ephemeris);
     auto pmt = pmt::make_blob(reinterpret_cast<void *>(&ephResults), size);

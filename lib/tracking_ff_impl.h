@@ -8,9 +8,9 @@
 #ifndef INCLUDED_GNSS_TRACKING_FF_IMPL_H
 #define INCLUDED_GNSS_TRACKING_FF_IMPL_H
 
-#include "channel.h"
 #include "generate_l1_ca.h"
 #include "helper-functions.h"
+#include <complex>
 #include <deque>
 #include <gnss/tracking_ff.h>
 #include <vector>
@@ -20,25 +20,23 @@ namespace gnss {
 
 class tracking_ff_impl : public tracking_ff {
 private:
-  uint64_t absSampleCount = 0;
-  unsigned long int test = 0;
   unsigned long int totalSamples{};
-  double totalRemCodePhase{};
   bool doTracking = false;
   bool restartAcquisition = false;
   bool collectSamples = false;
-  unsigned int samplesCollected{};
   int PRN{};
   float peakMetric{};
   int channelNum;
-  bool restartTracking{false};
   int msForQualityCheck = 1000;
+  int msToStabilize = 2000;
   int msCount{};
-  int signChangeCount{};
-  bool sendTag = false;
+  int bitTransitionCount{};
+  int positiveCorrCount{};
+  int negativeCorrCount{};
+  bool trackingLocked = false;
   // for sin cos calculations
   float a, b, sina, cosa, resSin, resCos;
-  float I_E{0}, Q_E{0}, Q_P{0}, I_P{0}, I_L{0}, Q_L{0};
+  std::complex<float> I_E, Q_E, Q_P, I_P, I_L, Q_L;
   int iterator = 0;
   int blksize{};
   int codePhase{};
@@ -47,7 +45,7 @@ private:
   float carrFreqBasis;
   std::vector<std::vector<int>> paddedCaTable;
   std::vector<int> caCode;
-  std::vector<float> longSignal;
+  std::vector<std::complex<float>> longSignal;
   int samplesPerCode{};
   float codeFreqBasis = 1023000;
   float codeFreq = 1023000;
@@ -58,7 +56,7 @@ private:
   float codePhaseStep = 0;
   float dllCorrelatorSpacing = 0.5;
   float output = 0;
-  float prevOutput{};
+  std::complex<float> prevOutput{};
   int codeLength = 1023;
   float remCarrPhase = 0;
   float remCodePhase = 0;
@@ -67,8 +65,8 @@ private:
   float oldCodeError = 0;
   float earlyLateSpc = 0.5;
   float chippingRate = 1023000;
-  short pllNoiseBandwidth = 25;
-  short dllNoiseBandwidth = 2;
+  float dllNoiseBandwidth;
+  float pllNoiseBandwidth;
   float pllDampingRatio = 0.7;
   float dllDampingRatio = 0.7;
   float loopGainCarr = 0.25;
@@ -81,7 +79,7 @@ private:
   void startReaquisition();
 
 public:
-  tracking_ff_impl(int _channelNum, float _sampleFreq);
+  tracking_ff_impl(int _channelNum, float _sampleFreq, float pll_nbw, float dll_nbw);
   tracking_ff_impl();
   ~tracking_ff_impl();
 

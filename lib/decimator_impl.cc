@@ -47,32 +47,33 @@ int decimator_impl::work(int noutput_items, gr_vector_const_void_star &input_ite
   tags.clear();
   this->get_tags_in_range(tags, 0, nread, nread + ninput_items);
 
-  // if (tags.size() > 0 && test < 20) {
-  //   std::cout << tags.size() << "     noutput items:   " << ninput_items << std::endl;
-  //   test++;
-  // }
-
   for (int j = 0; j < noutput_items; j++) {
     for (int i = j * decimation; i < j * decimation + decimation; i++) {
       if (in[i] != 0) {
-        valueIndex = i;
+        bit_samples.push_back(nitems_read(0) + i + 1);
+        int res = in[i] > 0 ? 1 : -1;
+        result.push_back(res);
       }
     }
+    tag_t tag;
+    tag.offset = this->nitems_written(0) + j;
+    if (!bit_samples.empty()) {
+      tag.value = pmt::from_uint64(bit_samples.front());
+      bit_samples.pop_front();
+    } else
+      tag.value = pmt::from_uint64(0);
     if (tags.size() == noutput_items) {
-      tag_t tag;
-      tag.offset = this->nitems_written(0) + j;
       tag.key = tags.at(j).key;
-      tag.value = tags.at(j).value;
-      this->add_item_tag(0, tag);
-      // if (in[valueIndex] > 0 && test < 100) {
-      //   std::cout.precision(9);
-      //   std::cout << std::fixed << (double)pmt::to_uint64(tags.at(j).value) / 38192.0 <<
-      //   std::endl;
-      // }
-      // if (in[valueIndex] > 0)
-      //   test++;
+    } else {
+      tag.key = pmt::mp(std::to_string(0));
     }
-    out[j] = in[valueIndex];
+    this->add_item_tag(0, tag);
+    int bitVal{};
+    if (!result.empty()) {
+      bitVal = result.front();
+      result.pop_front();
+    }
+    out[j] = bitVal;
   }
 
   // Tell runtime system how many output items we produced.

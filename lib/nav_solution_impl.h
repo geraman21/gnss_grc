@@ -10,6 +10,7 @@
 
 #include "ephemeris.h"
 #include "sat-position.h"
+#include <deque>
 #include <gnss/nav_solution.h>
 #include <vector>
 
@@ -19,19 +20,32 @@ namespace gnss {
 class nav_solution_impl : public nav_solution {
 private:
   std::vector<Ephemeris> ephemerides;
-  std::vector<tag_t> tags;
-  bool restartIterator = false;
+  float sampleFreq;
+  int decimation;
+  bool firstRun = true;
+  int numberOfChannels{};
   bool startNavigation = true;
-  int test = 0;
-  int navTest{};
-  unsigned int iterator = 0;
+  std::vector<bool> gatherNavBits;
+  std::vector<int> subframeStart;
+  std::vector<int> liveSubframeStart;
+  std::vector<int> PRN;
+  double live_TOW{};
+  double temp_TOW{};
+  int samplesForSubframeStart = 14000;
+  std::vector<std::deque<int>> navBits;
+  std::vector<std::vector<tag_t>> tags;
+  std::vector<double> receivedTime;
+  std::vector<uint64_t> iterator;
   // The speed of light, [m/s]
   long int c = 299792458;
   double startOffset = 68.802;
   std::vector<double> pseudoRanges;
 
 public:
-  nav_solution_impl();
+  void restartSubframeStartSearch();
+  void getEphemerisBits(int startInd, std::deque<int> &source, std::vector<int> &res);
+  bool gatherBits();
+  nav_solution_impl(float _sampleFreq, int _updateRate);
   ~nav_solution_impl();
 
   // Where all the action really happens

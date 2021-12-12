@@ -15,44 +15,58 @@ namespace gr {
 namespace gnss {
 
 using input_type = float;
-channel_starter::sptr channel_starter::make(int attempts, float s_sampleFreq) {
-  return gnuradio::make_block_sptr<channel_starter_impl>(attempts, s_sampleFreq);
+channel_starter::sptr channel_starter::make(float s_sampleFreq, float im_freq, int attempts) {
+  return gnuradio::make_block_sptr<channel_starter_impl>(s_sampleFreq, im_freq, attempts);
 }
 
 /*
  * The private constructor
  */
-channel_starter_impl::channel_starter_impl(int attempts, float s_sampleFreq)
+channel_starter_impl::channel_starter_impl(float s_sampleFreq, float im_freq, int attempts)
     : gr::sync_block(
           "channel_starter",
           gr::io_signature::make(0 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
           gr::io_signature::make(0, 0, 0)),
-      attemptsNum{attempts}, sampleFreq{s_sampleFreq} {
+      attemptsNum{attempts}, sampleFreq{s_sampleFreq}, IF{im_freq} {
   message_port_register_in(pmt::string_to_symbol("data_vector"));
   message_port_register_out(pmt::string_to_symbol("acquisition"));
   samplesPerCode = round(sampleFreq / (codeFreqBasis / codeLength));
   longSignal.reserve(11 * samplesPerCode);
   ts = 1.0 / sampleFreq;
   attemptsLeft.resize(33, 0);
+  std::fill(attemptsLeft.begin(), attemptsLeft.end(), attemptsNum);
 
   set_msg_handler(pmt::mp("data_vector"), [this](const pmt::pmt_t &msg) {
     auto msg_key = pmt::car(msg);
     auto msg_val = pmt::cdr(msg);
     int receivedPRN = pmt::to_long(msg_key);
-    std::cout << "Starter  working  PRN:   " << receivedPRN << std::endl;
     if (PRN != receivedPRN) {
       PRN = receivedPRN;
-      attemptsLeft.at(PRN) = attemptsNum;
-      complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
+      if (PRN != 0)
+        complexCaVector = makeComplexCaVector(samplesPerCode, PRN);
     }
-    if (attemptsLeft.at(PRN) > 0) {
-      const float *data = reinterpret_cast<const float *>(pmt::blob_data(msg_val));
+    if (attemptsLeft.at(PRN) > 0 && receivedPRN != 0) {
+      const gr_complex *data = reinterpret_cast<const gr_complex *>(pmt::blob_data(msg_val));
       longSignal.assign(data, data + longSignal.capacity());
-      AcqResults acqResult = performAcquisition(PRN, ts, complexCaVector, longSignal);
+      AcqResults acqResult = performAcquisition(PRN, ts, IF, complexCaVector, longSignal);
+      acqResult.PRN = PRN;
       auto size = sizeof(AcqResults);
       auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
       message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_start"), pmt));
-      attemptsLeft.at(PRN)--;
+      if (acqResult.peakMetric == 0)
+        attemptsLeft.at(PRN)--;
+      std::cout << "Starter for  PRN:   " << receivedPRN
+                << "    attempts left:  " << attemptsLeft.at(PRN)
+                << "   Identified PeakMetric:   " << acqResult.peakMetric << std::endl;
+      std::cout << "Freq:  " << acqResult.carrFreq << "    Phase:  " << acqResult.codePhase
+                << std::endl;
+    } else {
+      std::cout << "Channel Starter requested reacquisition for PRN:  " << PRN << std::endl;
+      AcqResults acqResult = AcqResults(PRN, 0, 0, 0);
+      auto size = sizeof(AcqResults);
+      auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResult), size);
+      message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_restart"), pmt));
+      attemptsLeft.at(PRN) = attemptsNum;
     }
   });
 }

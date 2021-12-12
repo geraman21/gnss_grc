@@ -20,20 +20,19 @@ class acquisition_impl : public acquisition {
 private:
   std::vector<std::vector<std::complex<float>>> complexCaTable;
   int channelNum{};
-  bool doColdStart = true;
   float sampleFreq;
   double ts;
-  unsigned int iterator = 0;
+  float IF;
   float codeFreqBasis = 1023000;
   float codeLength = 1023;
   float samplesPerCode;
-  int numberOfFrqBins = 29;
   std::vector<std::vector<std::complex<float>>> caCodesTable;
-  std::vector<float> longSignal;
+  std::vector<gr_complex> longSignal;
   std::vector<AcqResults> acqResults;
+  std::vector<int> channels;
 
 public:
-  acquisition_impl(float a_sampleFreq, int a_channelNum);
+  acquisition_impl(float a_sampleFreq, float im_freq, int a_channelNum);
   acquisition_impl();
   ~acquisition_impl();
 

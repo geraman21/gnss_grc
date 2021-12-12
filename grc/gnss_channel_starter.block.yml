@@ -1,10 +1,10 @@
 id: gnss_channel_starter
 label: Channel Starter
-category: '[gnss]'
+category: "[gnss]"
 
 templates:
   imports: import gnss
-  make: gnss.channel_starter(${attempts}, ${s_sampleFreq})
+  make: gnss.channel_starter(${s_sampleFreq}, ${im_freq}, ${attempts})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -12,14 +12,19 @@ templates:
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 parameters:
-- id: s_sampleFreq
-  label: Sampling Frequency
-  dtype: float
-  value: ${samp_rate}
-- id: attempts
-  label: Attempts
-  dtype: int
-  value: 10
+  - id: s_sampleFreq
+    label: Sampling Freq.
+    dtype: float
+    default: samp_rate
+  - id: im_freq
+    label: Intermediate Freq.
+    dtype: float
+    default: im_freq
+  - id: attempts
+    label: Attempts
+    dtype: int
+    default: 10
+
 #- id: ...
 #  label: ...
 #  dtype: ...
@@ -32,17 +37,16 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
-- domain: message
-  id: data_vector
-  optional: true
-  hide: false
-
+  - domain: message
+    id: data_vector
+    optional: true
+    hide: false
 
 outputs:
-- domain: message
-  id: acquisition
-  optional: true
-  hide: false
+  - domain: message
+    id: acquisition
+    optional: true
+    hide: false
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.

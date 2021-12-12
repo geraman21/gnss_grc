@@ -9,7 +9,7 @@
 #define INCLUDED_GNSS_NAV_DECODING_H
 
 #include <gnss/api.h>
-#include <gnuradio/sync_decimator.h>
+#include <gnuradio/sync_block.h>
 
 namespace gr {
 namespace gnss {
@@ -19,7 +19,7 @@ namespace gnss {
  * \ingroup gnss
  *
  */
-class GNSS_API nav_decoding : virtual public gr::sync_decimator {
+class GNSS_API nav_decoding : virtual public gr::sync_block {
 public:
   typedef std::shared_ptr<nav_decoding> sptr;
 
@@ -31,7 +31,7 @@ public:
    * class. gnss::nav_decoding::make is the public interface for
    * creating new instances.
    */
-  static sptr make(int channelNum);
+  static sptr make(int channelNum, float _sampleFreq);
 };
 
 } // namespace gnss
