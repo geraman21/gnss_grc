@@ -55,10 +55,6 @@ tracking_ff_impl::tracking_ff_impl(int _channelNum, float _sampleFreq, float pll
           startReaquisition();
       }
     }
-    // else if (pmt::symbol_to_string(msg_key) == "acq_restart") {
-    //   if (PRN == acqResult.PRN)
-    //     haltTracking();
-    // }
   });
   Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
   paddedCaTable.reserve(33);
@@ -79,8 +75,8 @@ void tracking_ff_impl::handleAcqStart(AcqResults acqResult) {
   codeFreq = codeFreqBasis;
   codePhaseStep = codeFreq * samplePeriod;
   blksize = ceil(codeLength / codePhaseStep);
-  restartAcquisition = false;
   unsigned long totalSamplesFromStart = totalSamples - acqResult.codePhase;
+  restartAcquisition = false;
   receivedCodePhase = blksize - (totalSamplesFromStart % blksize);
   codePhase = receivedCodePhase;
   carrFreq = acqResult.carrFreq;
@@ -109,15 +105,6 @@ void tracking_ff_impl::reset() {
   Q_E = I_E = Q_P = I_P = Q_L = I_L = std::complex<float>(0, 0);
 }
 
-void tracking_ff_impl::haltTracking() {
-  restartAcquisition = false;
-  collectSamples = false;
-  doTracking = false;
-  totalSamples = 0;
-  PRN = 0;
-  reset();
-}
-
 int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_items,
                            gr_vector_void_star &output_items) {
   const input_type *in = reinterpret_cast<const input_type *>(input_items[0]);
@@ -137,8 +124,6 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
     } else {
       trackingLocked = true;
     }
-    // std::cout << "Quality Results:   " << bitTransitionCount << "     out of    "
-    //           << msForQualityCheck / 20 << std::endl;
     msCount = 0;
     bitTransitionCount = 0;
     positiveCorrCount = 0;
@@ -151,7 +136,6 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
   float tStartPrompt = remCodePhase;
   float tEndPrompt = blksize * codePhaseStep + remCodePhase;
   for (int i = 0; i < noutput_items; i++) {
-    absSampleCount++;
     if (restartAcquisition) {
       totalSamples++;
     }
@@ -271,13 +255,9 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         //  Modify carrier freq based on NCO command
         carrFreq = carrFreqBasis + carrNco;
         float sqrtEarly, sqrtLate;
-        if (complexSignal) {
-          sqrtEarly = std::abs(I_E + Q_E);
-          sqrtLate = std::abs(I_L + Q_L);
-        } else {
-          sqrtEarly = sqrt(I_E.real() * I_E.real() + Q_E.real() * Q_E.real());
-          sqrtLate = sqrt(I_L.real() * I_L.real() + Q_L.real() * Q_L.real());
-        }
+        sqrtEarly = std::abs(I_E + Q_E);
+        sqrtLate = std::abs(I_L + Q_L);
+
         float codeError = (sqrtEarly - sqrtLate) / (sqrtEarly + sqrtLate);
 
         //  Implement code loop filter and generate NCO command
@@ -299,8 +279,7 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
         iterator++;
       }
     }
-    // out[i] = output && trackingLocked ? output : 0;
-    out[i] = output ? output : 0;
+    out[i] = output && trackingLocked ? output : 0;
     output = 0;
   }
 

@@ -8,6 +8,7 @@
 #ifndef INCLUDED_GNSS_DECIMATOR_IMPL_H
 #define INCLUDED_GNSS_DECIMATOR_IMPL_H
 
+#include <deque>
 #include <gnss/decimator.h>
 #include <vector>
 
@@ -16,12 +17,11 @@ namespace gnss {
 
 class decimator_impl : public decimator {
 private:
-  int test{};
   float sampleFreq;
   int decimation;
   std::vector<tag_t> tags;
-  int valueIndex{};
-  uint64_t absSampleCount{};
+  std::deque<int> result;
+  std::deque<uint64_t> bit_samples;
 
 public:
   decimator_impl(float sample_freq);

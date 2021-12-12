@@ -24,18 +24,13 @@ private:
   int decimation;
   bool firstRun = true;
   int numberOfChannels{};
-  bool restartIterator = false;
   bool startNavigation = true;
-  bool findSubframePositions = true;
   std::vector<bool> gatherNavBits;
-  int test = 0;
-  int navTest{};
   std::vector<int> subframeStart;
   std::vector<int> liveSubframeStart;
   std::vector<int> PRN;
   double live_TOW{};
   double temp_TOW{};
-  bool readyForNav = false;
   int samplesForSubframeStart = 14000;
   std::vector<std::deque<int>> navBits;
   std::vector<std::vector<tag_t>> tags;

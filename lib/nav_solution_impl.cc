@@ -38,9 +38,9 @@ nav_solution_impl::nav_solution_impl(float _sampleFreq, int _updateRate)
     Ephemeris data_object(*(reinterpret_cast<const Ephemeris *>(pmt::blob_data(msg))));
     if (data_object.channelNumber != -1) {
       ephemerides.at(data_object.channelNumber) = data_object;
-      +std::cout.precision(12);
-      data_object.printEphemeris();
-      std::cout << "============================" << std::endl;
+      std::cout.precision(12);
+      // data_object.printEphemeris();
+      // std::cout << "============================" << std::endl;
     }
   });
 }
@@ -54,6 +54,7 @@ void nav_solution_impl::restartSubframeStartSearch() {
   iterator.resize(numberOfChannels, 0);
   gatherNavBits.clear();
   gatherNavBits.resize(numberOfChannels, true);
+  temp_TOW = 0;
 }
 
 bool nav_solution_impl::gatherBits() {
@@ -123,17 +124,8 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
         receivedTime.at(p) =
             (double)pmt::to_uint64(tags.at(p).at(j * decimation + liveSubframeStart.at(p)).value) /
             ((double)sampleFreq / 1000.0);
-        // std::cout << pmt::to_uint64(tags.at(p).at(j * decimation +
-        // liveSubframeStart.at(p)).value)
-        //           << "    ";
       }
-      // if (startNavigation) {
-      //   std::cout << pmt::to_uint64(tags.at(p).at(j * decimation +
-      //   liveSubframeStart.at(p)).value)
-      //             << "     ";
-      // }
     }
-    // std::cout << std::endl;
 
     for (int i = j * decimation; i < j * decimation + decimation; i++) {
 
@@ -166,8 +158,13 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
           if (iterator.at(p) == samplesForSubframeStart - 1) {
             auto [s, t] = findSubframeStart(navBits.at(p));
             if (s != 0 && t != 0) {
-              subframeStart.at(p) = s;
-              temp_TOW = t;
+              if (temp_TOW == 0)
+                temp_TOW = t;
+
+              if (temp_TOW == t)
+                subframeStart.at(p) = s;
+              else
+                subframeStart.at(p) = s + (temp_TOW - t) * 1000;
               std::cout << "PRN:  " << PRN.at(p) << "    Subframe Start:  " << s
                         << "    TOW:  " << t << "    iterator:  " << iterator.at(p) << std::endl;
             } else {
@@ -184,33 +181,12 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
             receivedTime.at(p) =
                 (double)pmt::to_uint64(tags.at(p).at(i).value) / ((double)sampleFreq / 1000.0);
             gatherNavBits.at(p) = false;
-            // std::vector<int> ephBits;
-            // getEphemerisBits(subframeStart.at(p), navBits.at(p), ephBits);
-            // if (ephBits.size() >= 1501) {
-            //   ephemerides.at(p) = Ephemeris(ephBits, p);
-            //   if (TOW == 0) {
-            //     TOW = ephemerides.at(p).TOW;
-            //   }
-            //   std::cout << "TOW main:  " << TOW << "    from EPH:  " << ephemerides.at(p).TOW
-            //             << std::endl;
-            //   gatherNavBits.at(p) = false;
-            // } else {
-            //   std::cout << "Collecting ephBits failed restarting... " << ephBits.size()
-            //             << std::endl;
-            //   restartSubframeStartSearch();
-            //   break;
-            // }
-            // std::cout << "Ephemeris Data for PRN:  " << PRN.at(p) << "  ready" << std::endl;
           }
           iterator.at(p)++;
         }
       }
     }
 
-    // for (auto bits : navBits) {
-    //   std::cout << bits.size() << "     ";
-    // }
-    // std::cout << std::endl;
     std::vector<double> active_input_items;
     std::vector<Ephemeris> active_ephemerides;
     for (int p = 0; p < numberOfChannels; p++) {
@@ -225,26 +201,14 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
     if (active_input_items.size() < 4) {
       startNavigation = false;
-      test = 0;
-    } else {
-      if (test == 0) {
-        std::cout << "Active satellites:   " << active_input_items.size()
-                  << "  -  Navigation Solution in process" << std::endl;
-        test++;
-      }
     }
 
     if (startNavigation) {
-      // for (int i = 0; i < liveSubframeStart.size(); i++) {
-      //   std::cout << liveSubframeStart.at(i) << "  " << active_input_items.at(i) << "      ";
-      // }
-      // std::cout << std::endl;
       pseudoRanges = getPseudoRanges(active_input_items, startOffset, c);
       std::vector<SatPosition> satPositions(active_input_items.size());
       for (int i = 0; i < active_input_items.size(); i++) {
         satPositions.at(i) = SatPosition(live_TOW, active_ephemerides.at(i));
         pseudoRanges.at(i) = pseudoRanges.at(i) + satPositions.at(i).satClkCorr * c;
-        // std::cout << pseudoRanges.at(i) << "     ";
       }
       std::cout << std::endl;
 

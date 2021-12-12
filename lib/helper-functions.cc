@@ -43,32 +43,6 @@ double fast_sin(double x) {
   return x;
 }
 
-// float fast_sin(float x) {
-//   float sin = 0;
-//   if (x < -3.14159265f)
-//     x += 6.28318531f;
-//   else if (x > 3.14159265f)
-//     x -= 6.28318531f;
-
-//   if (x < 0) {
-//     sin = x * (1.27323954f + 0.405284735f * x);
-
-//     if (sin < 0)
-//       sin = sin * (-0.255f * (sin + 1) + 1);
-//     else
-//       sin = sin * (0.255f * (sin - 1) + 1);
-//   } else {
-//     sin = x * (1.27323954f - 0.405284735f * x);
-
-//     if (sin < 0)
-//       sin = sin * (-0.255f * (sin + 1) + 1);
-//     else
-//       sin = sin * (0.255f * (sin - 1) + 1);
-//   }
-
-//   return sin;
-// }
-
 void calcloopCoef(float &coeff1, float &coeff2, short loopNoiseBandwidth, float zeta,
                   float loopGain, float pdi) {
 
@@ -343,7 +317,6 @@ std::vector<double> getPseudoRanges(std::vector<double> &travelTime, double star
                  [minimum, startOffset, c](double a) {
                    return ((a - (double)minimum + startOffset) * (double)c / 1000.0);
                  });
-
   return pseudoRanges;
 }
 
@@ -390,9 +363,9 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
                                                  std::vector<std::complex<float>> &longSignal) {
   float sampleFreq = 1.0 / ts;
   int samplesPerCode = floor(1.0 / (ts * 1000));
-  int dopplerShift = 15000;
-  int frequencyStep = 200;
-  int numberOfFrqBins = dopplerShift * 2 / frequencyStep;
+  int dopplerShift = 12000;
+  int frequencyStep = 250;
+  int numberOfFrqBins = dopplerShift * 2 / frequencyStep + 1;
   std::vector<int> frqBins(numberOfFrqBins, 0);
   std::vector<std::vector<float>> results(numberOfFrqBins);
   float codeFreqBasis = 1023000;
@@ -421,9 +394,13 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
       gr_complex Q1 = cosCarr * longSignal.at(k);
       gr_complex I2 = sinCarr * longSignal.at(k + samplesPerCode);
       gr_complex Q2 = cosCarr * longSignal.at(k + samplesPerCode);
-
-      IQSignal1.at(k) = I1 + Q1;
-      IQSignal2.at(k) = I2 + Q2;
+      if (longSignal.at(k).imag() != 0) {
+        IQSignal1.at(k) = I1 + Q1;
+        IQSignal2.at(k) = I2 + Q2;
+      } else {
+        IQSignal1.at(k) = std::complex<float>(I1.real(), Q1.real());
+        IQSignal2.at(k) = std::complex<float>(I2.real(), Q2.real());
+      }
     }
 
     // IQSignal1 = fft(I1 + j * Q1);
@@ -454,20 +431,16 @@ std::tuple<int, float> doParallelCodePhaseSearch(float ts, float IF,
 
     std::vector<float> acqRes1, acqRes2;
     float max1{0}, max2{0};
-    int index1{0}, index2{0};
     for (int i = 0; i < samplesPerCode; i++) {
-
       float ac1 = std::pow(std::abs(IQSignal1.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
       float ac2 = std::pow(std::abs(IQSignal2.at(i) / std::complex<float>(samplesPerCode, 0)), 2);
       acqRes1.push_back(ac1);
       acqRes2.push_back(ac2);
       if (max1 < ac1) {
         max1 = ac1;
-        index1 = i;
       }
       if (max2 < ac2) {
         max2 = ac2;
-        index2 = i;
       }
     }
 
@@ -528,26 +501,19 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
   float codeFreqBasis = 1023000;
 
   auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
-  if (channelStrength > 2.0) {
+  if (channelStrength > 2.5) {
     std::vector<int> caCode = generateCa(PRN);
     std::vector<std::complex<float>> xCarrier;
     xCarrier.reserve(samplesPerCode * 10);
     gr_complex longSignalMean =
         std::accumulate(longSignal.begin(), longSignal.end(), std::complex<float>(0, 0)) /
         (float)longSignal.size();
-    // float longSignalMean;
-    // for (int i = 0; i < samplesPerCode * 10; i++) {
-    //   longSignalMean = longSignal.at(i + codePhase).real();
-    // }
-    // longSignalMean = longSignalMean / (samplesPerCode * 10);
     for (int i = 0; i < samplesPerCode * 10; i++) {
       int index = floor(ts * i * codeFreqBasis);
       int caCodeIndex = index % 1023;
       xCarrier.push_back(std::complex<float>(
           (longSignal.at(i + codePhase).real() - longSignalMean.real()) * caCode.at(caCodeIndex),
           0));
-      // xCarrier.push_back((longSignal.at(i + codePhase)) *
-      //                    std::complex<float>(caCode.at(caCodeIndex), 0.0));
     }
 
     int fftNumPts = 8 * pow(2, ceil(log2(xCarrier.size())));
@@ -572,8 +538,6 @@ AcqResults performAcquisition(int PRN, float ts, float IF,
         std::max_element(fftxcAbs.begin(), fftxcAbs.begin() + uniqFftPts - 5) - fftxcAbs.begin();
     float carrFreq = (fftMaxIndex - 3) * sampleFreq / fftNumPts;
 
-    // std::cout << "PRN: " << PRN << " -> CarrFreq: " << carrFreq << ",
-    // CodePhase: " << codePhase << std::endl;
     AcqResults result(PRN, carrFreq, codePhase, channelStrength);
     return result;
   } else
@@ -587,7 +551,7 @@ AcqResults checkIfChannelPresent(int PRN, float ts, float IF,
 
   auto [codePhase, channelStrength] = doParallelCodePhaseSearch(ts, IF, caCodeVector, longSignal);
 
-  if (channelStrength > 3.0) {
+  if (channelStrength > 2.5) {
     return AcqResults(PRN, 0, codePhase, channelStrength);
   } else
     return AcqResults(0, 0, 0, channelStrength);

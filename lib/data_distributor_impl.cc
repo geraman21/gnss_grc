@@ -38,7 +38,6 @@ data_distributor_impl::data_distributor_impl(float numSamples)
       distribute = true;
       acqInProgress = true;
       iterator = 0;
-      test = 0;
       lognSignal.clear();
       lognSignal.reserve(samplesToSend);
     } else if (pmt::symbol_to_string(msg_key) == "acq_result" && acqInProgress) {

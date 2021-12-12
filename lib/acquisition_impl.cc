@@ -65,20 +65,20 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
       // Send active channels to respective tracking blocks if no specific PRN provided
       for (int i = 0; i < channelNum; i++) {
         if (channels.at(i) == receivedPRN) {
-          if (acqResults.size() == 0)
+          if (acqResults.size() == 0) {
+            newChannelAcquired = false;
             break;
+          }
 
           acqResults.back().channelNumber = i;
-          // if (acqResults.back().PRN == 1) {
-          //   acqResults.back().PRN = 17;
-          // }
           channels.at(i) = acqResults.back().PRN;
 
           auto size = sizeof(AcqResults);
           auto pmt = pmt::make_blob(reinterpret_cast<void *>(&acqResults.back()), size);
           message_port_pub(pmt::mp("acquisition"), pmt::cons(pmt::mp("acq_result"), pmt));
           newChannelAcquired = true;
-          std::cout << "Assigned channel   " << i << "(" << receivedPRN << ")"
+          std::cout << "Assigned channel   " << acqResults.back().channelNumber << "("
+                    << receivedPRN << ")"
                     << "    new PRN value   " << acqResults.back().PRN << std::endl;
           acqResults.pop_back();
         }

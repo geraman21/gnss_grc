@@ -18,7 +18,6 @@ list(APPEND gnss_sources
     ephemeris.cc
     geo-functions.cc
     sat-position.cc
-    channel.cc
     nav_decoding_impl.cc
     nav_solution_impl.cc
     acquisition_impl.cc
