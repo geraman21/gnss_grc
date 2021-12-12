@@ -8,7 +8,6 @@
 #ifndef INCLUDED_GNSS_TRACKING_FF_IMPL_H
 #define INCLUDED_GNSS_TRACKING_FF_IMPL_H
 
-#include "channel.h"
 #include "generate_l1_ca.h"
 #include "helper-functions.h"
 #include <complex>
@@ -21,17 +20,13 @@ namespace gnss {
 
 class tracking_ff_impl : public tracking_ff {
 private:
-  unsigned long int test = 0;
   unsigned long int totalSamples{};
-  double totalRemCodePhase{};
   bool doTracking = false;
   bool restartAcquisition = false;
   bool collectSamples = false;
-  unsigned int samplesCollected{};
   int PRN{};
   float peakMetric{};
   int channelNum;
-  bool restartTracking{false};
   int msForQualityCheck = 1000;
   int msToStabilize = 2000;
   int msCount{};
@@ -39,7 +34,6 @@ private:
   int positiveCorrCount{};
   int negativeCorrCount{};
   bool trackingLocked = false;
-  bool sendTag = false;
   // for sin cos calculations
   float a, b, sina, cosa, resSin, resCos;
   std::complex<float> I_E, Q_E, Q_P, I_P, I_L, Q_L;

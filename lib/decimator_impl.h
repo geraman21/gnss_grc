@@ -17,11 +17,9 @@ namespace gnss {
 
 class decimator_impl : public decimator {
 private:
-  int test{};
   float sampleFreq;
   int decimation;
   std::vector<tag_t> tags;
-  uint64_t absSampleCount{};
   std::deque<int> result;
   std::deque<uint64_t> bit_samples;
 

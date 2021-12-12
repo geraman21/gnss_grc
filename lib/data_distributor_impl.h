@@ -16,14 +16,12 @@ namespace gnss {
 
 class data_distributor_impl : public data_distributor {
 private:
-  unsigned long int test;
   int PRN{};
   bool distribute = true;
   bool acqInProgress = false;
   unsigned int iterator = 0;
   unsigned int samplesToSend{};
   std::vector<gr_complex> lognSignal;
-  unsigned long int counter{};
 
 public:
   data_distributor_impl(float numSamples);

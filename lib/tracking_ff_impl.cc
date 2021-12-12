@@ -124,8 +124,6 @@ int tracking_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_i
     } else {
       trackingLocked = true;
     }
-    // std::cout << "Quality Results:   " << bitTransitionCount << "     out of    "
-    //           << msForQualityCheck / 20 << std::endl;
     msCount = 0;
     bitTransitionCount = 0;
     positiveCorrCount = 0;

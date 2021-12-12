@@ -54,7 +54,6 @@ acquisition_impl::acquisition_impl(float a_sampleFreq, float im_freq, int a_chan
       std::cout.precision(1);
       result.PRN ? std::cout << std::fixed << PRN << " [ " << result.peakMetric << " ]   "
                  : std::cout << "   .   ";
-      // std::cout << std::fixed << PRN << " [ " << result.peakMetric << " ]   ";
       if (result.PRN)
         acqResults.push_back(result);
     }

@@ -124,17 +124,8 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
         receivedTime.at(p) =
             (double)pmt::to_uint64(tags.at(p).at(j * decimation + liveSubframeStart.at(p)).value) /
             ((double)sampleFreq / 1000.0);
-        // std::cout << pmt::to_uint64(tags.at(p).at(j * decimation +
-        // liveSubframeStart.at(p)).value)
-        //           << "    ";
       }
-      // if (startNavigation) {
-      //   std::cout << pmt::to_uint64(tags.at(p).at(j * decimation +
-      //   liveSubframeStart.at(p)).value)
-      //             << "     ";
-      // }
     }
-    // std::cout << std::endl;
 
     for (int i = j * decimation; i < j * decimation + decimation; i++) {
 
@@ -210,20 +201,9 @@ int nav_solution_impl::work(int noutput_items, gr_vector_const_void_star &input_
 
     if (active_input_items.size() < 4) {
       startNavigation = false;
-      test = 0;
-    } else {
-      if (test == 0) {
-        std::cout << "Active satellites:   " << active_input_items.size()
-                  << "  -  Navigation Solution in process" << std::endl;
-        test++;
-      }
     }
 
     if (startNavigation) {
-      // for (int i = 0; i < liveSubframeStart.size(); i++) {
-      //   std::cout << liveSubframeStart.at(i) << "  " << active_input_items.at(i) << "      ";
-      // }
-      // std::cout << std::endl;
       pseudoRanges = getPseudoRanges(active_input_items, startOffset, c);
       std::vector<SatPosition> satPositions(active_input_items.size());
       for (int i = 0; i < active_input_items.size(); i++) {
