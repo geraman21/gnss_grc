@@ -26,3 +26,5 @@ cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/gnuradio/3.9.2.0_1
 Make sure to specify the correct installation folder according to the gnuradio version installed.
 
 After installation is complete, open GRC GUI and click refresh button, the custom module with all its block should be available inside the module selection list.
+
+receiver_test.grc is an example frow graph that calculates GPS L1 position using up to 6 observables. The source GPS signal can be found at: https://sourceforge.net/projects/gnss-sdr/files/data/2013_04_04_GNSS_SIGNAL_at_CTTC_SPAIN.tar.gz/download
